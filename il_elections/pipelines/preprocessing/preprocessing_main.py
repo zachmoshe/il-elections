@@ -12,7 +12,7 @@ from il_elections.pipelines.preprocessing import preprocessing
 
 
 _DEFAULT_OUTPUT_FOLDER = 'outputs/preprocessing'
-_DEFAULT_CONFIG_FILE = str(pathlib.Path(__file__).parent / 'config.yaml')
+_DEFAULT_CONFIG_FILE = 'config/preprocessing_config.yaml'
 
 _FLAG_CONFIG_FILE = flags.DEFINE_string(
     'config_file', _DEFAULT_CONFIG_FILE, 'Config filename to use')
@@ -32,6 +32,7 @@ def main(argv):
         else:
             logging.error('Output folder already exists. '
                           'Override flag is set to false. Can\'t continue')
+            exit(1)
     output_path.mkdir(parents=True, exist_ok=True)
     
     config = preprocessing.PreprocessingConfig.from_yaml(
