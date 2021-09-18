@@ -48,9 +48,9 @@ def main(argv):
 
         # Dump metadata
         with open(output_path / metadata_filename, 'wt') as f:
-            yaml.dump(dataclasses.asdict(campign_metadata))
+            yaml.dump(dataclasses.asdict(campign_metadata), f)
         # Dump dataframe
-        campign_df.to_csv(output_path / data_filename, encoding='utf8')
+        campign_df.to_parquet(output_path / data_filename)
 
 
 if __name__ == '__main__':
