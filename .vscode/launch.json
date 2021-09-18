@@ -9,8 +9,10 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/il_elections/pipelines/preprocessing/preprocessing_main.py",
+            "args": [], 
             "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env": {"PYTHONPATH": ".:$PYTHONPATH"}
         }
     ]
 }
