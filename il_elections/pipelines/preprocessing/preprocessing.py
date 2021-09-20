@@ -1,14 +1,16 @@
+"""Utilities for the preprocessing pipeline."""
 from concurrent import futures
 import dataclasses
 import datetime
-import numpy as np
-import pandas as pd
 import pathlib
 import re
-from typing import Iterator, TypeVar, Sequence, Tuple, Iterator
+from typing import Iterator, TypeVar, Sequence, Tuple
+
+from absl import logging
+import numpy as np
+import pandas as pd
 import yaml
 
-from absl import logging 
 
 from il_elections.data import data
 from il_elections.data import geodata_fetcher
@@ -16,7 +18,8 @@ from il_elections.data import parsers
 
 
 BallotsVotesParserType = TypeVar('BallotsVotesParserType', bound=parsers.BallotsVotesParser)
-BallotsMetadataParserType = TypeVar('BallotsMetadataParserType', bound=parsers.BallotsMetadataParser)
+BallotsMetadataParserType = TypeVar('BallotsMetadataParserType',
+                                    bound=parsers.BallotsMetadataParser)
 
 @dataclasses.dataclass(frozen=True)
 class CampignDataLocation:
@@ -39,14 +42,15 @@ class CampignConfig:
 @dataclasses.dataclass(frozen=True)
 class PreprocessingConfig:
     """A run config for the preprocessing pipeline.
-    
+
     Consists of a sequence of campigns that need to be parsed.
     """
     campigns: Sequence[CampignConfig]
 
     @classmethod
     def from_yaml(cls, yaml_path: pathlib.Path):
-        with open(yaml_path) as f:
+        """Loads a PreprocessingConfig object from yaml file."""
+        with open(yaml_path, encoding='utf8') as f:
             obj = yaml.safe_load(f)
 
         campign_configs = []
@@ -96,8 +100,8 @@ def _strip_string(s):
 
 def _normalize_optional_addresses(
     locality_name: str, location_name: str, address: str) -> Sequence[str]:
-    """Returns ordered potential variation of the address from city name, location name and address."""
-    # Notice that since we process Dataframes, it would have been more efficient to 
+    """Returns ordered potential variation of the address to enrich."""
+    # Notice that since we process Dataframes, it would have been more efficient to
     # work on the whole column at once. This method handles addresses separately
     # to allow for more flexibility in tweaking the strings.
     locality_name = _strip_string(locality_name)
@@ -115,17 +119,19 @@ def _normalize_optional_addresses(
 
 _NUM_PANDAS_APPLY_THREADS = 8
 def _pandas_apply_multithreaded(df, func):
-    """Applies the given `func` on `df` in parallel (could be a DataFrame or a Series if `func` can handle it)."""
+    """Applies the given `func` on `df` in parallel.
+    (could be a DataFrame or a Series if `func` can handle it).
+    """
     chunks = np.array_split(df, _NUM_PANDAS_APPLY_THREADS)
     with futures.ThreadPoolExecutor(_NUM_PANDAS_APPLY_THREADS) as exc:
         results = pd.concat(exc.map(
-            lambda df: df.apply(func), 
+            lambda df: df.apply(func),
             chunks))
     return results
 
 def _is_lng_lat_legal(geodata: geodata_fetcher.GeoDataResults):
     """Checks if lng/lat boundaries are within Israel (approx.)"""
-    return (34. < geodata.longitude < 36.) and (29. < geodata.latitude < 34.)
+    return (34. < geodata.longitude < 36.) and (29. < geodata.latitude < 34.)  # pylint: disable=chained-comparison
 
 
 def enrich_metadata_with_geolocation(metadata_df: pd.DataFrame) -> pd.DataFrame:
@@ -135,7 +141,7 @@ def enrich_metadata_with_geolocation(metadata_df: pd.DataFrame) -> pd.DataFrame:
     normalized_addresses_options = (
         metadata_df[['locality_name', 'location_name', 'address']]
         .apply(
-            lambda x: _normalize_optional_addresses(*x), 
+            lambda x: _normalize_optional_addresses(*x),
             axis='columns')
         )
     fetcher = geodata_fetcher.GeoDataFetcher()
@@ -166,7 +172,7 @@ def preprocess(config: PreprocessingConfig
         logging.info(f'Loading data for campign {campign_name}')
         campign_data = load_campign_data(campign_config)
 
-        logging.info(f'Enriching with geolocation')
+        logging.info('Enriching with geolocation')
         metadata_df = campign_data.metadata.df
         metadata_df = enrich_metadata_with_geolocation(metadata_df)
         votes_df = campign_data.votes.df

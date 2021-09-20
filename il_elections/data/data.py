@@ -1,7 +1,7 @@
+"""Various data classes and utilities."""
 import abc
 import dataclasses
-import re
-from typing import Sequence, Mapping, Union, Any
+from typing import Mapping, Union, Any
 
 import pandas as pd
 
@@ -9,7 +9,7 @@ import pandas as pd
 @dataclasses.dataclass(frozen=True)
 class TypeAwareDataFrame(abc.ABC):
     """Represents pd.DataFrames with some awareness of their columns and dtypes.
-    
+
     Child implementations will override the `_dataframe_dtypes` with a dtypes
     mapping. The `__post_init__()` will verify that columns and dtypes are correct.
     """
@@ -40,9 +40,9 @@ class TypeAwareDataFrame(abc.ABC):
 class BallotsMetadata(TypeAwareDataFrame):
     """Represents metadata information about a ballot (location, address, ...)."""
     _dataframe_dtypes = {
-        'ballot_id': 'string', 
+        'ballot_id': 'string',
         'locality_id': 'string',
-        'locality_name': 'string', 
+        'locality_name': 'string',
         'location_name': 'string',
         'address': 'string'
     }
@@ -72,6 +72,3 @@ class BallotsVotes(TypeAwareDataFrame):
         # Set index to locality_id+ballot_id
         self.df.set_index(self.df['locality_id'] + '-' + self.df['ballot_id'],
                           inplace=True)
-
-
-

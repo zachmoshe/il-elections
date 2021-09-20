@@ -17,5 +17,14 @@
         "**/.pytest_cache": true,
         "**/__pycache__": true
     },
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.lintOnSave": true,
+    "python.linting.pylintArgs": ["--rcfile=.pylintrc"],
+    "editor.rulers": [100],
+    "files.autoSave": "afterDelay",
+    "files.trimTrailingWhitespace": true,
+    "python.formatting.provider": "autopep8",
+    "python.formatting.autopep8Args": ["--max-line-length", "100"],
 }

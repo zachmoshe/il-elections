@@ -27,6 +27,7 @@ parameterized = "^0.8.1"
 jupyter_http_over_ws = "^0.0.8"  # also requires running `jupyter serverextension enable --py jupyter_http_over_ws`
 matplotlib = "^3.4.3"
 pytest = "^6.2.5"
+pylint = "^2.11.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0a5"]

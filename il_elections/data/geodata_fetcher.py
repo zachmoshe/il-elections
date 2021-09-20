@@ -1,6 +1,7 @@
+"""Fetches geo-location data for an address using Google GeoLocation API."""
 import dataclasses
 from typing import Optional
-import os 
+import os
 import pandas as pd
 
 import googlemaps
@@ -20,7 +21,8 @@ def _load_known_addresses_geolocations(filename):
     df['lng'] = df['lng'].astype(float)
     return df.set_index('address')
 
-_KNOWN_ADDRESSES_GEOLOCATIONS = _load_known_addresses_geolocations(_KNOWN_ADDRESSES_GEOLOCATIONS_FILENAME)
+_KNOWN_ADDRESSES_GEOLOCATIONS = _load_known_addresses_geolocations(
+    _KNOWN_ADDRESSES_GEOLOCATIONS_FILENAME)
 
 @dataclasses.dataclass(frozen=True)
 class GeoDataResults:
@@ -31,9 +33,9 @@ _CACHE_ONLY_MODE = os.environ.get('GEOFETCHER_CACHE_ONLY', '').lower() in ('1', 
 @locally_memoize.locally_memoize(cache_only=_CACHE_ONLY_MODE)
 def _geocode_address(address, api_key):
     gmaps = googlemaps.Client(api_key)
-    try: 
+    try:
         return gmaps.geocode(address)
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         return None
 
 
@@ -52,18 +54,17 @@ class GeoDataFetcher:
         googlemaps.Client(self.api_key)
 
     def fetch_geocode_data(self, address: str) -> Optional[GeoDataResults]:
+        """Fetches Google GeoLocation data for an address."""
         if address in _KNOWN_ADDRESSES_GEOLOCATIONS.index:
             return GeoDataResults(
                 longitude=_KNOWN_ADDRESSES_GEOLOCATIONS.loc[address]['lng'],
                 latitude=_KNOWN_ADDRESSES_GEOLOCATIONS.loc[address]['lat'])
-        else:
-            results = _geocode_address(address, self.api_key)
-            if results:
-                # Take the first one. GMaps should only return one result except on
-                # ambigious queries.
-                results = results[0]
-                return GeoDataResults(
-                    longitude=results['geometry']['location']['lng'],
-                    latitude=results['geometry']['location']['lat'])
-            else:
-                return None
+        results = _geocode_address(address, self.api_key)
+        if results:
+            # Take the first one. GMaps should only return one result except on
+            # ambigious queries.
+            results = results[0]
+            return GeoDataResults(
+                longitude=results['geometry']['location']['lng'],
+                latitude=results['geometry']['location']['lat'])
+        return None
