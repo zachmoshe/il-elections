@@ -6,10 +6,27 @@ Other than my experiments, the processed dataframes will be available for everyo
 
 Data was obtained from the [Israeli Central Elections Committee](https://www.bechirot.gov.il/) for every campign I could find the exported data for the vote counts in each ballot, and a metadata file with ballot's addresses. This results with various file formats and encodings for the campigns to the 18th-24th Knessets (roughly 2009-2021). 
 
+## How to set up environment
+
+- You'll need [pyenv](https://github.com/pyenv/pyenv#installation) and [poetry](https://python-poetry.org/docs/#installation).
+- Install Python. On MacOS, use this (handles some requirements and compiler paths):
+```
+bin/install_python_on_macos.sh
+```
+If not on MacOS install Python 3.9.7:
+```
+pyenv install 3.9.7
+```
+- Install requirements:
+```
+poetry install
+```
+
+
 ## [TBD] Input Data Files
 
 - main fields in votes and ballots files. 
-- different formats and parsers.
+- different formats and parsers. Mention PDF parsing problems any why we need to manually convert to XLSX
 - config/preprocessing_config.yaml.
 
 ## [TBD] Preprocessing Pipeline

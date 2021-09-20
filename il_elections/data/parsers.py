@@ -1,5 +1,4 @@
 import abc
-import camelot
 import pathlib
 import re
 import tempfile
@@ -52,6 +51,8 @@ class BallotsMetadataExcelParser(BallotsMetadataParser):
         # Excel stores all numbers as floats. Convert to int and then string to remove 
         # the additional '.0' suffix.
         dataframe['locality_id'] = dataframe['locality_id'].astype(int).astype('string')
+        # ballot_id is a "real" float.
+        dataframe['ballot_id'] = dataframe['ballot_id'].astype(float).astype('string')
 
         dataframe = dataframe.astype('string')
         for c in dataframe.columns:
@@ -62,8 +63,7 @@ class BallotsMetadataExcelParser(BallotsMetadataParser):
 
 class BallotsMetadataPDFParser(BallotsMetadataParser):
     """Parses ballots metadata from PDF file format (used in the knesset-19 elections)."""
-    _CSV_CACHED_SUFFIX = '.cached-csv'    
-    _CSV_ENCODING = 'utf-8'
+    _EXCEL_CONVERTED_SUFFIX = '.xlsx'    
 
     _COLUMNS_MAPPING = {
         'למס\nיפלק': 'ballot_id',
@@ -72,21 +72,6 @@ class BallotsMetadataPDFParser(BallotsMetadataParser):
         'יפלק םוקמ': 'location_name',
         'יפלק תבותכ': 'address',        
     }
-
-    def _load_or_create_dataframe(self, path: pathlib.Path) -> pd.DataFrame:
-        cached_file = path.with_suffix(self._CSV_CACHED_SUFFIX)
-        if cached_file.exists():
-            return pd.read_csv(cached_file, encoding=self._CSV_ENCODING)
-
-        all_pages_results = camelot.read_pdf(str(path), pages='all')
-        dataframes = []
-        for res in all_pages_results:
-            res.df.columns = res.df.iloc[0]
-            res.df = res.df.iloc[1:]
-            dataframes.append(res.df.astype('string'))
-        dataframe = pd.concat(dataframes)
-        dataframe.to_csv(cached_file, encoding=self._CSV_ENCODING)
-        return dataframe
 
     @staticmethod
     def _clean_text(text):
@@ -102,10 +87,19 @@ class BallotsMetadataPDFParser(BallotsMetadataParser):
         return text.strip()
 
     def parse(self, path: pathlib.Path) -> data.BallotsMetadata:
-        # Check if a cached CSV version of the PDF exists.
-        # If it doesn't - parse the PDF (very long, ~20mins) and store it.
-        dataframe = self._load_or_create_dataframe(path)
+        converted_file_path = path.parent / (path.name + self._EXCEL_CONVERTED_SUFFIX)
+        if not converted_file_path.exists():
+            raise ValueError('''
+PDFParser expects to find an Excel format file for the required PDF.
+Apparently Python PDF parsing packages don't handle well right-to-left text with parentheses in tables and mess up the whole structure.
+Although called PDFParser, this parser will actually parse an XLSX format generated from that file. In order to convert PDF to Excel, use 
+'Export As' in Acrobat Reader.
+            ''')
 
+        dataframe = pd.read_excel(str(converted_file_path))
+        # Remove the repeating table header in every page.
+        dataframe = dataframe[dataframe['הדעו למס']!='הדעו למס']
+        
         dataframe = (
             dataframe
             .loc[:, self._COLUMNS_MAPPING.keys()]
@@ -116,7 +110,9 @@ class BallotsMetadataPDFParser(BallotsMetadataParser):
             dataframe['location_name'].apply(self._clean_text))
         dataframe['locality_name'] = (
             dataframe['locality_name'].apply(self._clean_text))
-        dataframe['address'] = dataframe['address'].apply(self._clean_text)
+        dataframe['address'] = dataframe['address'].astype('string').apply(self._clean_text)
+        # ballot_id might have non digits characters because of parsing problems.
+        dataframe['ballot_id'] = dataframe['ballot_id'].astype('string').str.replace('[^0-9.]', '', regex=True).astype(float).astype('string')
 
         return data.BallotsMetadata(df=dataframe.astype('string'))
 
@@ -193,7 +189,7 @@ class BallotsVotesFileParser(BallotsVotesParser):
             orig_dataframe
             .loc[:, columns_mapping.keys()]
             .rename(columns_mapping, axis='columns'))
-        dataframe['ballot_id'] = dataframe['ballot_id'].astype('string')
+        dataframe['ballot_id'] = dataframe['ballot_id'].astype(float).astype('string')
         dataframe['locality_id'] = dataframe['locality_id'].astype('string')
         dataframe['locality_name'] = dataframe['locality_name'].astype('string')
 

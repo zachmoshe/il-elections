@@ -17,10 +17,6 @@ googlemaps = "^4.5.3"
 importlib_resources = "^5.2.2"
 pyarrow = "^5.0.0"
 
-[tool.poetry.dependencies.camelot-py]
-extras = ["base"]
-version = "^0.10.1"
-
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.5.7"
 ipykernel = "^6.2.0"
@@ -30,6 +26,7 @@ parameterized = "^0.8.1"
 # Colab requirements
 jupyter_http_over_ws = "^0.0.8"  # also requires running `jupyter serverextension enable --py jupyter_http_over_ws`
 matplotlib = "^3.4.3"
+pytest = "^6.2.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0a5"]

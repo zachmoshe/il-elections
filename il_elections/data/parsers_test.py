@@ -38,35 +38,28 @@ class BallotsMetadataExcelParserTest(unittest.TestCase):
 _PDF_BALLOTS_FILE_VALUES = (
     ('1.0', '3000', 
     'ירושלים', 
-    'ביה"ס בית יעקב הצפון  ( סנהדריה )',
-    'מעגלי הרי"ם לוין 52,'),
+    'ביה"ס בית יעקב הצפון )סנהדריה(',
+    'מעגלי הרי"ם לוין,52'),
     ('2.0', '3000',
     'ירושלים', 
-    '"בי ס בית יעקב עזרת תורה',
-    'אהלי יוסף 51,'),
+    'בי"ס בית יעקב עזרת תורה',
+    'אהלי יוסף,51'),
     ('3.0', '3000', 
     'ירושלים', 
     'מרכז קהילתי פאני קפלן',
-    'מגן האלף  1,')
+    'מגן האלף,1')
 )
 _PDF_BALLOTS_FILE_RECORDS = [
     dict(zip(_BALLOT_METADATA_COLUMNS, values)) for values in _PDF_BALLOTS_FILE_VALUES]
 
 class BallotsMetadataPDFParserTest(unittest.TestCase):
     _TEST_FILE_PATH = pathlib.Path('data/tests/ballots_metadata_test_file.pdf')
-    
-    def _delete_csv_cache(self):
-        cache_file = self._TEST_FILE_PATH.with_suffix(
-            parsers.BallotsMetadataPDFParser._CSV_CACHED_SUFFIX)
-        cache_file.unlink(missing_ok=True)
 
     def setUp(self) -> None:
         super().setUp()
-        self._delete_csv_cache()
     
     def tearDown(self) -> None:
         super().tearDown()
-        self._delete_csv_cache()
 
     def test_parses_file_correctly(self):
         results = parsers.BallotsMetadataPDFParser().parse(self._TEST_FILE_PATH)
