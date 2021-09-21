@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/il_elections/pipelines/preprocessing/preprocessing_main.py",
-            "args": [], 
+            "args": ["--override"], 
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "env": {"PYTHONPATH": ".:$PYTHONPATH"}
