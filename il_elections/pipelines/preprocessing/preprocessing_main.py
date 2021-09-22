@@ -13,6 +13,8 @@ import yaml
 from absl import app
 from absl import flags
 from absl import logging
+import pandas as pd
+import tabulate
 
 from il_elections.pipelines.preprocessing import preprocessing
 
@@ -28,6 +30,30 @@ _FLAG_OVERRIDE = flags.DEFINE_bool(
 _FLAG_OUTPUT_FODLER = flags.DEFINE_string(
     'output_folder', _DEFAULT_OUTPUT_FOLDER,
     'Output folder for preprocessed results')
+
+
+def _print_campign_data_analysis(campign_metadata: preprocessing.CampignMetadata,
+                                 campign_data_analysis: preprocessing.CampignDataAnalysis):
+    logging_parts = [
+        f'''
+Analysis report for {campign_metadata.name}:
+==============================================
+Total Num Voters: {campign_data_analysis.num_voters}
+Total Num Voted: {campign_data_analysis.num_voted} ({campign_data_analysis.voting_ratio:2.2%})
+''',
+        'Most votes parties:',
+        tabulate.tabulate(
+            (pd.Series(campign_data_analysis.parties_votes, name='count')
+             .sort_values(ascending=False).iloc[:5].to_frame()),
+            tablefmt='grid', floatfmt='f'),
+        'Missing GeoLocations:',
+        tabulate.tabulate(
+            campign_data_analysis.missing_geo_location.to_frame(),
+            tablefmt='grid',
+            headers=(','.join(campign_data_analysis.missing_geo_location.index.names),
+                     'count')),
+    ]
+    logging.info('\n'.join([] + logging_parts))
 
 
 def main(_):
@@ -58,6 +84,9 @@ def main(_):
         # Dump dataframe
         campign_df.to_parquet(output_path / data_filename)
 
+        # Analyze campign data and print report
+        campign_data_analysis = preprocessing.analyze_campign_data(campign_df)
+        _print_campign_data_analysis(campign_metadata, campign_data_analysis)
 
 if __name__ == '__main__':
     app.run(main)

@@ -2,9 +2,10 @@
 from concurrent import futures
 import dataclasses
 import datetime
+import itertools as it
 import pathlib
 import re
-from typing import Iterator, TypeVar, Sequence, Tuple
+from typing import Iterator, TypeVar, Sequence, Tuple, Mapping
 
 from absl import logging
 import numpy as np
@@ -183,3 +184,34 @@ def preprocess(config: PreprocessingConfig
                   .drop(['ballot_id', 'locality_id', 'locality_name'], axis='columns')
                   ))
         yield campign_config.metadata, df
+
+
+@dataclasses.dataclass
+class CampignDataAnalysis:
+    """Holds aggregate information on a single campign data."""
+    num_voters: int
+    num_voted: int
+    voting_ratio: float
+    parties_votes: Mapping[str, int]
+    missing_geo_location: pd.Series
+
+
+def analyze_campign_data(campign_data: pd.DataFrame) -> CampignDataAnalysis:
+    """Generate aggregate stats on campign data (in the final dataframe format)."""
+    num_voters = campign_data['num_registered_voters'].sum()
+    num_voted = campign_data['num_voted'].sum()
+    parties_votes = dict(
+        (key, sum(v[1] for v in values))
+         for key, values in it.groupby(sorted(
+             it.chain(*[d.items() for d in campign_data['parties_votes']])), key=lambda x: x[0])
+    )
+    missing_geo = campign_data[campign_data['lat'].isnull() | campign_data['lng'].isnull()]
+    missing_geo_counts = missing_geo.fillna('NA').groupby(
+        ['locality_name', 'location_name', 'address']).size().sort_values(ascending=False)
+
+    return CampignDataAnalysis(
+        num_voters=num_voters,
+        num_voted=num_voted,
+        voting_ratio=num_voted / num_voters,
+        parties_votes=parties_votes,
+        missing_geo_location=missing_geo_counts)
