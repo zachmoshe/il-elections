@@ -80,7 +80,6 @@ class CampignData:
 
 def load_campign_data(config: CampignConfig) -> CampignData:
     """Loads and parses the metadata and votes files for a campign."""
-    logging.info(f'loading data for campign {config.metadata.name}...')
     metadata_parser = parsers.get_ballots_metadata_parser(config.data.ballots_metadata_format)
     metadata = metadata_parser.parse(pathlib.Path(config.data.ballots_metadata_path))
 
@@ -135,6 +134,14 @@ def _is_lng_lat_legal(geodata: geodata_fetcher.GeoDataResults):
     return (34. < geodata.longitude < 36.) and (29. < geodata.latitude < 34.)  # pylint: disable=chained-comparison
 
 
+_NON_GEOGRAPHICAL_LOCALITY_IDS = set([
+    '0',  # Duplicate votes (knesset-18 only).
+    '875',  # External votes (knesset-19/20 only).
+    '99999',  # External votes (knesset-21 only).
+    '9999',  # External votes (knesset-22/23/24 only).
+])
+
+
 def enrich_metadata_with_geolocation(metadata_df: pd.DataFrame) -> pd.DataFrame:
     """Enriches the metadata dataframe with the `lat` and `lng` columns of the ballot's address."""
     metadata_df = metadata_df.copy()
@@ -159,6 +166,13 @@ def enrich_metadata_with_geolocation(metadata_df: pd.DataFrame) -> pd.DataFrame:
     return metadata_df
 
 
+def _get_ballot_index(ballots_dataframe, drop_subballot=False):
+    ballot_id = ballots_dataframe['ballot_id']
+    if drop_subballot:
+        ballot_id = ballot_id.str.replace(r'\.[1-9]+', '.0', regex=True)
+    return ballots_dataframe['locality_id'] + '-' + ballot_id
+
+
 def preprocess(config: PreprocessingConfig
                ) -> Iterator[Tuple[CampignMetadata, pd.DataFrame]]:
     """Runs a preprocessing pipeline for a given config (multiple campigns).
@@ -174,15 +188,55 @@ def preprocess(config: PreprocessingConfig
         campign_data = load_campign_data(campign_config)
 
         logging.info('Enriching with geolocation')
-        metadata_df = campign_data.metadata.df
-        metadata_df = enrich_metadata_with_geolocation(metadata_df)
         votes_df = campign_data.votes.df
+        metadata_df = campign_data.metadata.df
+        # Make sure all localities from `votes_df` exist in `metadata_df`. For the missing ones, add
+        # an empty row to metadata with only the locality_name and a fake ballot_id so we can at
+        # least enrich with the locality_name alone.
+        missing_locality_ids = (set(votes_df.locality_id.unique())
+                                - set(metadata_df.locality_id.unique())
+                                - _NON_GEOGRAPHICAL_LOCALITY_IDS)
+        missing_localities = (
+            votes_df[votes_df.locality_id.isin(missing_locality_ids)]
+            .groupby('locality_id').agg(min)['locality_name'].to_frame()  # All are the same.
+            .assign(ballot_id='0.0').reset_index())  # Adding a fake ballot_id.
+        metadata_df = metadata_df.append(missing_localities)
+        metadata_df = enrich_metadata_with_geolocation(metadata_df)
 
+        votes_df.set_index(_get_ballot_index(votes_df, drop_subballot=False), inplace=True)
+        metadata_df.set_index(_get_ballot_index(metadata_df, drop_subballot=False), inplace=True)
+
+        # First, try matching exactly the same index (locality_id + ballot_id)
         df = (
             votes_df
-            .join(metadata_df
-                  .drop(['ballot_id', 'locality_id', 'locality_name'], axis='columns')
-                  ))
+            .merge(metadata_df.drop(votes_df.columns, errors='ignore', axis='columns'),
+                   how='left',
+                   left_index=True,
+                   right_index=True))
+
+        # Try to match unmatced rows to the same index but with ballot_id with a '.0' suffix.
+        # This will help when `votes_df` contains ballots like '123.1' and '123.2' but `metadata_df`
+        # only have data for `123.0` (that's normally the case when a ballot is splitted based on
+        # family name first letter).
+        missing_idxs = df[df['lat'].isnull() | df['lng'].isnull()].index
+        df.loc[missing_idxs] = (
+            votes_df.loc[missing_idxs]
+            .merge(metadata_df.drop(votes_df.columns, errors='ignore', axis='columns'),
+                   how='left',
+                   left_on=_get_ballot_index(votes_df.loc[missing_idxs], drop_subballot=True),
+                   right_index=True))
+
+        # Records that are still not matched will be matched to the average lat/lng in their
+        # locality (apprently it happens that some ballot_ids are just missing from the metadata
+        # file), in that case we'll just assume it's somewhere in the locality.
+        missing_idxs = df[df['lat'].isnull() | df['lng'].isnull()].index
+        df.loc[missing_idxs] = (
+            votes_df.loc[missing_idxs]
+            .merge(metadata_df.groupby('locality_id').agg(np.mean)[['lat', 'lng']],
+                   how='left',
+                   left_on='locality_id',
+                   right_index=True))
+
         yield campign_config.metadata, df
 
 

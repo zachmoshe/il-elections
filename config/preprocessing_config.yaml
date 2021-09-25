@@ -6,7 +6,7 @@ preprocessing_config:
         ballots_votes:
           filename: data/elections/knesset-24/expb-24.csv
           format: csv-windows
-        ballots_metadata: 
+        ballots_metadata:
           filename: data/elections/knesset-24/kalpies_report_tofes_b_18.3.21-24.xlsx
           format: excel
 
@@ -16,7 +16,7 @@ preprocessing_config:
         ballots_votes:
           filename: data/elections/knesset-23/expb-23.csv
           format: csv-windows
-        ballots_metadata: 
+        ballots_metadata:
           filename: data/elections/knesset-23/kalpies_report_19_1_20_1-23.xlsx
           format: excel
 
@@ -26,7 +26,7 @@ preprocessing_config:
         ballots_votes:
           filename: data/elections/knesset-22/expb-22.csv
           format: csv-windows
-        ballots_metadata: 
+        ballots_metadata:
           filename: data/elections/knesset-22/kalpies_report_tofes_b_6th_edition_15_9-22.xlsx
           format: excel
 
@@ -36,7 +36,7 @@ preprocessing_config:
         ballots_votes:
           filename: data/elections/knesset-21/expb-21.csv
           format: csv-windows
-        ballots_metadata: 
+        ballots_metadata:
           filename: data/elections/knesset-21/kalpies_full_report-21.xls
           format: excel
 
@@ -46,7 +46,7 @@ preprocessing_config:
         ballots_votes:
           filename: data/elections/knesset-20/expbkal20.csv
           format: csv-utf8
-        ballots_metadata: 
+        ballots_metadata:
           filename: data/elections/knesset-20/TellThePolls.9.3-20.xls
           format: excel
 
@@ -56,7 +56,7 @@ preprocessing_config:
         ballots_votes:
           filename: data/elections/knesset-19/results_19.xls
           format: excel
-        ballots_metadata: 
+        ballots_metadata:
           filename: data/elections/knesset-19/AllStations-19.pdf
           format: pdf
 
@@ -68,7 +68,6 @@ preprocessing_config:
           format: csv-windows
         # This campign doesn't have ballots metadata file. We do our best and try
         # to match it to the next campign's file.
-        ballots_metadata: 
+        ballots_metadata:
           filename: data/elections/knesset-19/AllStations-19.pdf
           format: pdf
-    

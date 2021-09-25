@@ -30,6 +30,8 @@ _FLAG_OVERRIDE = flags.DEFINE_bool(
 _FLAG_OUTPUT_FODLER = flags.DEFINE_string(
     'output_folder', _DEFAULT_OUTPUT_FOLDER,
     'Output folder for preprocessed results')
+_FLAG_SINGLE_CAMPIGN = flags.DEFINE_string(
+    'single_campign', None, 'Only run this campign from the config (None runs all)')
 
 
 def _print_campign_data_analysis(campign_metadata: preprocessing.CampignMetadata,
@@ -69,8 +71,16 @@ def main(_):
 
     config = preprocessing.PreprocessingConfig.from_yaml(
         _FLAG_CONFIG_FILE.value)
-    logging.info(f'Config loaded. Found {len(config.campigns)} campigns to preprocess.')
 
+    single_campign = _FLAG_SINGLE_CAMPIGN.value
+    if single_campign:
+        campigns_by_name = {campign.metadata.name: campign for campign in config.campigns}
+        if single_campign not in campigns_by_name:
+            sys.exit(1)
+        logging.info(f'Will only process campign "{single_campign}".')
+        config = dataclasses.replace(config, campigns=[campigns_by_name[single_campign]])
+
+    logging.info(f'Config loaded. Found {len(config.campigns)} campigns to preprocess.')
     preprocessed_data_iter = preprocessing.preprocess(config)
 
     for campign_metadata, campign_df in preprocessed_data_iter:
