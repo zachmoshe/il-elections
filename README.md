@@ -4,7 +4,7 @@ This project's goal is to collect and analyze data from Israel's last election c
 
 Other than my experiments, the processed dataframes will be available for everyone who wants to continue digging into this.
 
-Data was obtained from the [Israeli Central Elections Committee](https://www.bechirot.gov.il/) for every campign I could find the exported data for the vote counts in each ballot, and a metadata file with ballot's addresses. This results with various file formats and encodings for the campigns to the 18th-24th Knessets (roughly 2009-2021). 
+Data was obtained from the [Israeli Central Elections Committee](https://www.bechirot.gov.il/) for every campign I could find the exported data for the vote counts in each ballot, and a metadata file with ballot's addresses. This results with various file formats and encodings for the campigns to the 18th-24th Knessets (roughly 2009-2021).
 
 ## How to set up environment
 
@@ -25,9 +25,11 @@ poetry install
 
 ## [TBD] Input Data Files
 
-- main fields in votes and ballots files. 
+- main fields in votes and ballots files.
 - different formats and parsers. Mention PDF parsing problems any why we need to manually convert to XLSX
 - config/preprocessing_config.yaml.
+- Israel polygon - explain why joining Israel and West Bank. Download files from https://www.geoboundaries.org/index.html#getdata for "Israel (ADM0)" and "State of Palestine (ADM0)". mention data_utils.load_israel_polygon()
+
 
 ## [TBD] Preprocessing Pipeline
 
