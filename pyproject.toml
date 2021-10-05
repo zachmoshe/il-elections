@@ -19,6 +19,8 @@ pyarrow = "^5.0.0"
 tabulate = "^0.8.9"
 geopandas = "^0.10.0"
 Shapely = "^1.7.1"
+branca = "^0.4.2"
+folium = "^0.12.1"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.5.7"
