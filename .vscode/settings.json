@@ -24,6 +24,7 @@
     "python.linting.pylintArgs": ["--rcfile=.pylintrc"],
     "editor.rulers": [100],
     "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 10000,
     "files.trimTrailingWhitespace": true,
     "python.formatting.provider": "autopep8",
     "python.formatting.autopep8Args": ["--max-line-length", "100"],
