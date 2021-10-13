@@ -23,30 +23,30 @@ BallotsMetadataParserType = TypeVar('BallotsMetadataParserType',
                                     bound=parsers.BallotsMetadataParser)
 
 @dataclasses.dataclass(frozen=True)
-class CampignDataLocation:
+class CampaignDataLocation:
     ballots_votes_path: pathlib.Path
     ballots_votes_format: str
     ballots_metadata_path: pathlib.Path
     ballots_metadata_format: str
 
 @dataclasses.dataclass(frozen=True)
-class CampignMetadata:
+class CampaignMetadata:
     name: str
     date: datetime.date
 
 @dataclasses.dataclass(frozen=True)
-class CampignConfig:
-    """Holds all the relevant config needed to process a single campign."""
-    metadata: CampignMetadata
-    data: CampignDataLocation
+class CampaignConfig:
+    """Holds all the relevant config needed to process a single campaign."""
+    metadata: CampaignMetadata
+    data: CampaignDataLocation
 
 @dataclasses.dataclass(frozen=True)
 class PreprocessingConfig:
     """A run config for the preprocessing pipeline.
 
-    Consists of a sequence of campigns that need to be parsed.
+    Consists of a sequence of campaigns that need to be parsed.
     """
-    campigns: Sequence[CampignConfig]
+    campaigns: Sequence[CampaignConfig]
 
     @classmethod
     def from_yaml(cls, yaml_path: pathlib.Path):
@@ -54,39 +54,39 @@ class PreprocessingConfig:
         with open(yaml_path, encoding='utf8') as f:
             obj = yaml.safe_load(f)
 
-        campign_configs = []
-        for obj in obj['preprocessing_config']['campigns']:
-            campign_configs.append(
-                CampignConfig(
-                    metadata=CampignMetadata(
-                        name=obj['campign_name'],
-                        date=obj['campign_date'],
+        campaign_configs = []
+        for obj in obj['preprocessing_config']['campaigns']:
+            campaign_configs.append(
+                CampaignConfig(
+                    metadata=CampaignMetadata(
+                        name=obj['campaign_name'],
+                        date=obj['campaign_date'],
                     ),
-                    data=CampignDataLocation(
+                    data=CampaignDataLocation(
                         ballots_metadata_path=obj['data']['ballots_metadata']['filename'],
                         ballots_metadata_format=obj['data']['ballots_metadata']['format'],
                         ballots_votes_path=obj['data']['ballots_votes']['filename'],
                         ballots_votes_format=obj['data']['ballots_votes']['format'],
                     )))
-        return PreprocessingConfig(campigns=campign_configs)
+        return PreprocessingConfig(campaigns=campaign_configs)
 
 
 @dataclasses.dataclass(frozen=True)
-class CampignData:
-    """Holds the processing results from a single campign."""
+class CampaignData:
+    """Holds the processing results from a single campaign."""
     metadata: data.BallotsMetadata
     votes: data.BallotsVotes
 
 
-def load_campign_data(config: CampignConfig) -> CampignData:
-    """Loads and parses the metadata and votes files for a campign."""
+def load_campaign_data(config: CampaignConfig) -> CampaignData:
+    """Loads and parses the metadata and votes files for a campaign."""
     metadata_parser = parsers.get_ballots_metadata_parser(config.data.ballots_metadata_format)
     metadata = metadata_parser.parse(pathlib.Path(config.data.ballots_metadata_path))
 
     votes_parser = parsers.get_ballots_votes_parser(config.data.ballots_votes_format)
     votes = votes_parser.parse(pathlib.Path(config.data.ballots_votes_path))
 
-    return CampignData(metadata=metadata, votes=votes)
+    return CampaignData(metadata=metadata, votes=votes)
 
 
 _NON_ALPHANUMERIC_SEQUENCE = re.compile('[^a-z0-9\u0590-\u05ff]+', flags=re.IGNORECASE)
@@ -174,22 +174,22 @@ def _get_ballot_index(ballots_dataframe, drop_subballot=False):
 
 
 def preprocess(config: PreprocessingConfig
-               ) -> Iterator[Tuple[CampignMetadata, pd.DataFrame]]:
-    """Runs a preprocessing pipeline for a given config (multiple campigns).
-    Yields tuples of (campign_metadata, dataframe) for every campign.
+               ) -> Iterator[Tuple[CampaignMetadata, pd.DataFrame]]:
+    """Runs a preprocessing pipeline for a given config (multiple campaigns).
+    Yields tuples of (campaign_metadata, dataframe) for every campaign.
     """
-    logging.info('Started preprocessing the following campigns: '
-                 f'{[c.metadata.name for c in config.campigns]}')
+    logging.info('Started preprocessing the following campaigns: '
+                 f'{[c.metadata.name for c in config.campaigns]}')
 
-    for campign_config in config.campigns:
-        campign_name = campign_config.metadata.name
+    for campaign_config in config.campaigns:
+        campaign_name = campaign_config.metadata.name
 
-        logging.info(f'Loading data for campign {campign_name}')
-        campign_data = load_campign_data(campign_config)
+        logging.info(f'Loading data for campaign {campaign_name}')
+        campaign_data = load_campaign_data(campaign_config)
 
         logging.info('Enriching with geolocation')
-        votes_df = campign_data.votes.df
-        metadata_df = campign_data.metadata.df
+        votes_df = campaign_data.votes.df
+        metadata_df = campaign_data.metadata.df
         # Make sure all localities from `votes_df` exist in `metadata_df`. For the missing ones, add
         # an empty row to metadata with only the locality_name and a fake ballot_id so we can at
         # least enrich with the locality_name alone.
@@ -237,12 +237,12 @@ def preprocess(config: PreprocessingConfig
                    left_on='locality_id',
                    right_index=True))
 
-        yield campign_config.metadata, df
+        yield campaign_config.metadata, df
 
 
 @dataclasses.dataclass
-class CampignDataAnalysis:
-    """Holds aggregate information on a single campign data."""
+class CampaignDataAnalysis:
+    """Holds aggregate information on a single campaign data."""
     num_voters: int
     num_voted: int
     voting_ratio: float
@@ -250,20 +250,20 @@ class CampignDataAnalysis:
     missing_geo_location: pd.Series
 
 
-def analyze_campign_data(campign_data: pd.DataFrame) -> CampignDataAnalysis:
-    """Generate aggregate stats on campign data (in the final dataframe format)."""
-    num_voters = campign_data['num_registered_voters'].sum()
-    num_voted = campign_data['num_voted'].sum()
+def analyze_campaign_data(campaign_data: pd.DataFrame) -> CampaignDataAnalysis:
+    """Generate aggregate stats on campaign data (in the final dataframe format)."""
+    num_voters = campaign_data['num_registered_voters'].sum()
+    num_voted = campaign_data['num_voted'].sum()
     parties_votes = dict(
         (key, sum(v[1] for v in values))
          for key, values in it.groupby(sorted(
-             it.chain(*[d.items() for d in campign_data['parties_votes']])), key=lambda x: x[0])
+             it.chain(*[d.items() for d in campaign_data['parties_votes']])), key=lambda x: x[0])
     )
-    missing_geo = campign_data[campign_data['lat'].isnull() | campign_data['lng'].isnull()]
+    missing_geo = campaign_data[campaign_data['lat'].isnull() | campaign_data['lng'].isnull()]
     missing_geo_counts = missing_geo.fillna('NA').groupby(
         ['locality_name', 'location_name', 'address']).size().sort_values(ascending=False)
 
-    return CampignDataAnalysis(
+    return CampaignDataAnalysis(
         num_voters=num_voters,
         num_voted=num_voted,
         voting_ratio=num_voted / num_voters,

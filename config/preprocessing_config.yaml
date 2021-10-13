@@ -1,7 +1,7 @@
 preprocessing_config:
-  campigns:
-    - campign_name: knesset-24
-      campign_date: !!timestamp 2021-03-23
+  campaigns:
+    - campaign_name: knesset-24
+      campaign_date: !!timestamp 2021-03-23
       data:
         ballots_votes:
           filename: data/elections/knesset-24/expb-24.csv
@@ -10,8 +10,8 @@ preprocessing_config:
           filename: data/elections/knesset-24/kalpies_report_tofes_b_18.3.21-24.xlsx
           format: excel
 
-    - campign_name: knesset-23
-      campign_date: !!timestamp 2020-03-02
+    - campaign_name: knesset-23
+      campaign_date: !!timestamp 2020-03-02
       data:
         ballots_votes:
           filename: data/elections/knesset-23/expb-23.csv
@@ -20,8 +20,8 @@ preprocessing_config:
           filename: data/elections/knesset-23/kalpies_report_19_1_20_1-23.xlsx
           format: excel
 
-    - campign_name: knesset-22
-      campign_date: !!timestamp 2019-09-17
+    - campaign_name: knesset-22
+      campaign_date: !!timestamp 2019-09-17
       data:
         ballots_votes:
           filename: data/elections/knesset-22/expb-22.csv
@@ -30,8 +30,8 @@ preprocessing_config:
           filename: data/elections/knesset-22/kalpies_report_tofes_b_6th_edition_15_9-22.xlsx
           format: excel
 
-    - campign_name: knesset-21
-      campign_date: !!timestamp 2019-04-09
+    - campaign_name: knesset-21
+      campaign_date: !!timestamp 2019-04-09
       data:
         ballots_votes:
           filename: data/elections/knesset-21/expb-21.csv
@@ -40,8 +40,8 @@ preprocessing_config:
           filename: data/elections/knesset-21/kalpies_full_report-21.xls
           format: excel
 
-    - campign_name: knesset-20
-      campign_date: !!timestamp 2015-03-17
+    - campaign_name: knesset-20
+      campaign_date: !!timestamp 2015-03-17
       data:
         ballots_votes:
           filename: data/elections/knesset-20/expbkal20.csv
@@ -50,8 +50,8 @@ preprocessing_config:
           filename: data/elections/knesset-20/TellThePolls.9.3-20.xls
           format: excel
 
-    - campign_name: knesset-19
-      campign_date: !!timestamp 2013-01-22
+    - campaign_name: knesset-19
+      campaign_date: !!timestamp 2013-01-22
       data:
         ballots_votes:
           filename: data/elections/knesset-19/results_19.xls
@@ -60,14 +60,14 @@ preprocessing_config:
           filename: data/elections/knesset-19/AllStations-19.pdf
           format: pdf
 
-    - campign_name: knesset-18
-      campign_date: !!timestamp 2009-02-10
+    - campaign_name: knesset-18
+      campaign_date: !!timestamp 2009-02-10
       data:
         ballots_votes:
           filename: data/elections/knesset-18/kalpiot-18.csv
           format: csv-windows
-        # This campign doesn't have ballots metadata file. We do our best and try
-        # to match it to the next campign's file.
+        # This campaign doesn't have ballots metadata file. We do our best and try
+        # to match it to the next campaign's file.
         ballots_metadata:
           filename: data/elections/knesset-19/AllStations-19.pdf
           format: pdf

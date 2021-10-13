@@ -1,10 +1,10 @@
 # IL-Elections
 
-This project's goal is to collect and analyze data from Israel's last election campigns (and there's been a few lately) and play with that a little bit.
+This project's goal is to collect and analyze data from Israel's last election campaigns (and there's been a few lately) and play with that a little bit.
 
 Other than my experiments, the processed dataframes will be available for everyone who wants to continue digging into this.
 
-Data was obtained from the [Israeli Central Elections Committee](https://www.bechirot.gov.il/) for every campign I could find the exported data for the vote counts in each ballot, and a metadata file with ballot's addresses. This results with various file formats and encodings for the campigns to the 18th-24th Knessets (roughly 2009-2021).
+Data was obtained from the [Israeli Central Elections Committee](https://www.bechirot.gov.il/) for every campaign I could find the exported data for the vote counts in each ballot, and a metadata file with ballot's addresses. This results with various file formats and encodings for the campaigns to the 18th-24th Knessets (roughly 2009-2021).
 
 ## How to set up environment
 
