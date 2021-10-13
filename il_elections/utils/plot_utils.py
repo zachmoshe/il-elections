@@ -9,6 +9,9 @@ import pandas as pd
 import pyproj
 import shapely
 
+# Required in order to allow geopandas to load KML files (no need to install a new driver)
+gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
+
 
 PROJ_UTM = 'EPSG:32636'  # UTM zone 36 (matches Israel)
 PROJ_LNGLAT = 'EPSG:4326'
@@ -23,11 +26,11 @@ _ISR_ADM0_GEOJSON_PATH = pathlib.Path('data/gis/boundaries/geoBoundaries-ISR-ADM
 _ISR_ADM1_GEOJSON_PATH = pathlib.Path('data/gis/boundaries/geoBoundaries-ISR-ADM1-all.zip')
 _PSE_ADM0_GEOJSON_PATH = pathlib.Path('data/gis/boundaries/geoBoundaries-PSE-ADM0-all.zip')
 _PSE_ADM1_GEOJSON_PATH = pathlib.Path('data/gis/boundaries/geoBoundaries-PSE-ADM1-all.zip')
+_ISR_WATER_BODIES_PATH = pathlib.Path('data/gis/boundaries/Israel_water_bodies.kml')
 _ISR_ADM1 = (
     gpd.read_file(_ISR_ADM1_GEOJSON_PATH)
     .set_index('shapeName')
     .to_crs(PROJ_UTM))
-
 
 def generate_circle_utm(center, radius_meters):
     return shapely.geometry.Point(center).buffer(radius_meters)
@@ -38,10 +41,27 @@ def generate_rectangle_utm(min_x, min_y, max_x, max_y):
         [(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)])
 
 
+def load_israel_polygon():
+    """Returns a Shapely polygon (UTM) for the state of Israel (including the west bank)."""
+    # Take all Israel and the West Bank only from PSE.
+    israel = pd.concat([
+        gpd.read_file(_ISR_ADM1_GEOJSON_PATH),
+        gpd.read_file(_PSE_ADM1_GEOJSON_PATH),
+    ]).query('shapeGroup=="ISR" or shapeISO=="PS-WBK"').unary_union
+
+    all_water_bodies_polygon = gpd.read_file(_ISR_WATER_BODIES_PATH).unary_union
+
+    # Eliminate all tiny holes due to imperfect alignment between ISR and PSE files.
+    israel = shapely.geometry.Polygon(israel.exterior)
+    israel -= all_water_bodies_polygon
+    israel_utm = shapely.ops.transform(lnglat_to_utm.transform, israel)
+    return israel_utm
+
+
 class Maps(enum.Enum):
     """Holds known maps for easier reference."""
     # Areas
-    ISRAEL = _ISR_ADM1.dissolve().iloc[0].geometry
+    ISRAEL = load_israel_polygon()
     NORTH = _ISR_ADM1.loc['North District'].geometry
     CENTER = _ISR_ADM1.loc[['Tel Aviv District', 'Center District']].dissolve().iloc[0].geometry
     SOUTH = _ISR_ADM1.loc['South District'].geometry
@@ -73,17 +93,3 @@ def map(map_def, width='100%', height=400):  # pylint: disable=redefined-builtin
 
     fig.add_child(m)
     return m
-
-
-def load_israel_polygon():
-    """Returns a Shapely polygon (UTM) for the state of Israel (including the west bank)."""
-    # Take all Israel and the West Bank only from PSE.
-    israel = pd.concat([
-        gpd.read_file(_ISR_ADM1_GEOJSON_PATH),
-        gpd.read_file(_PSE_ADM1_GEOJSON_PATH),
-    ]).query('shapeGroup=="ISR" or shapeISO=="PS-WBK"').unary_union
-
-    # Eliminate all tiny holes due to imperfect alignment between ISR and PSE files.
-    israel = shapely.geometry.Polygon(israel.exterior)
-    israel_utm = shapely.ops.transform(lnglat_to_utm.transform, israel)
-    return israel_utm
