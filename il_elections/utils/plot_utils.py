@@ -81,7 +81,7 @@ class Maps(enum.Enum):
         return self.value.bounds
 
 
-def map(map_def, width='100%', height=400):  # pylint: disable=redefined-builtin
+def ilmap(map_def, width='100%', height=400):  # pylint: disable=redefined-builtin
     """Generates a map object that plays nicely with Colab."""
     fig = branca.element.Figure(width=width, height=height)
     m = folium.Map(tiles='OpenStreetMap')
