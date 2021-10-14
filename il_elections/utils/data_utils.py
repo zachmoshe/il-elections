@@ -1,5 +1,7 @@
 """Utilities to ease working with the ballots geo data."""
-from typing import Iterator, Sequence
+import itertools as it
+
+from typing import Iterator, Sequence, Mapping
 import geopandas as gpd
 import numpy as np
 import shapely.geometry
@@ -81,3 +83,12 @@ def group_points_by_polygons(points, polygons):
                 .rename({'index': 'polygon_id'}, axis='columns'))
     grouped = polygons.sjoin(points, how='inner', predicate='contains').groupby('polygon_id')
     return grouped
+
+
+VotingCounts = Mapping[str, int]
+def aggregate_parties_votes(parties_votes: Sequence[VotingCounts]) -> VotingCounts:
+    """Aggregates the counts of every parts from a sequence of counts."""
+    sorted_votes_items = sorted(it.chain(i for d in parties_votes for i in d.items()),
+                                key=lambda x: x[0])
+    return dict((party, sum(x[1] for x in items))
+                for party, items in it.groupby(sorted_votes_items, key=lambda x: x[0]))

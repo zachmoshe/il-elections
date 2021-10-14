@@ -151,3 +151,26 @@ class GroupPointsByPolygonTest(unittest.TestCase):
 
         self.assertEqual(len(result), 4)
         self.assertEqual(result.values.tolist(), [1, 1, 1, 1])
+
+
+class AggregatePartiesVotesTest(unittest.TestCase):
+
+    def test_empty_counts(self):
+        self.assertEqual(data_utils.aggregate_parties_votes([]), {})
+
+    def test_single_count_remains_the_same(self):
+        counts = [{'a': 1, 'b': 2, 'c': 0}]
+        result = data_utils.aggregate_parties_votes(counts)
+        self.assertEqual(result, counts[0])
+
+    def test_multiple_counts(self):
+        counts = [{'a': 1, 'b': 2, 'c': 0},
+                  {'a': 0, 'b': 1, 'c': 0}]
+        result = data_utils.aggregate_parties_votes(counts)
+        self.assertEqual(result, {'a': 1, 'b': 3, 'c': 0})
+
+    def test_multiple_counts_missing_parties(self):
+        counts = [{'a': 1, 'b': 2, 'c': 0},
+                  {'b': 1, 'c': 1}]
+        result = data_utils.aggregate_parties_votes(counts)
+        self.assertEqual(result, {'a': 1, 'b': 3, 'c': 1})
