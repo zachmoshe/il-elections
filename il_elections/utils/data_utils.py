@@ -51,12 +51,33 @@ def _generate_grid(bounded_polygon: shapely.geometry.Polygon,
 
 
 def generate_grid_by_size(bounded_polygon, grid_size, crs=plot_utils.PROJ_UTM):
+    """Generates a grid that covers the polygon with (size x size) cells."""
     grid_polygons = list(_generate_covering_polygons_grid_cells_by_grid_size(
         bounded_polygon, grid_size))
     return _generate_grid(bounded_polygon, grid_polygons, crs)
 
 
 def generate_grid_by_length(bounded_polygon, grid_length, crs=plot_utils.PROJ_UTM):
+    """Generates a grid that covers the polygon where every cell is at size (length x length)."""
     grid_polygons = list(_generate_covering_polygons_grid_cells_by_grid_length(
         bounded_polygon, grid_length))
     return _generate_grid(bounded_polygon, grid_polygons, crs)
+
+
+def group_points_by_polygons(points, polygons):
+    """Groups together all points that fall inside the same polygon.
+
+    Returns a DataFrameGroupBy object which the user can continue querying. For example:
+    ```
+    points = ...
+    polygons = generate_grid_by_size(...)
+    # Gives the average number of voters in all ballots inside each polygon on the grid.
+    group_points_by_polygons(points, polygons)['num_voters'].mean()
+    ```
+    """
+    polygons = (polygons
+                .to_frame('geometry')
+                .reset_index()
+                .rename({'index': 'polygon_id'}, axis='columns'))
+    grouped = polygons.sjoin(points, how='inner', predicate='contains').groupby('polygon_id')
+    return grouped

@@ -1,6 +1,8 @@
 """Unit tests for the data_utils module."""
 import unittest
 
+import geopandas as gpd
+import numpy as np
 from parameterized import parameterized, parameterized_class
 import shapely.geometry
 import shapely.ops
@@ -107,3 +109,45 @@ class GenerateGridTest(unittest.TestCase):
 
         # the top right cell should be removed as it doesn't intersect with the polygon
         self.assertTrue(polygon.difference(grid.unary_union).is_empty)
+
+
+class GroupPointsByPolygonTest(unittest.TestCase):
+    def test_all_points_in_a_single_polygon(self):
+        points = np.array([(1,1), (1,2), (2,1), (2,2)])
+        points = gpd.GeoDataFrame(geometry=gpd.points_from_xy(*points.T), crs=None)
+        polygons = data_utils.generate_grid_by_size(shapely.geometry.box(0, 0, 3, 3), 1, crs=None)
+
+        result = data_utils.group_points_by_polygons(points, polygons).size()
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0], 4)  # All 4 points
+
+    def test_all_points_in_multiple_polygons(self):
+        points = np.array([(1,1), (1,2), (2,1), (2,2)])
+        points = gpd.GeoDataFrame(geometry=gpd.points_from_xy(*points.T), crs=None)
+        polygons = data_utils.generate_grid_by_size(shapely.geometry.box(0, 0, 3, 3), 2, crs=None)
+
+        result = data_utils.group_points_by_polygons(points, polygons).size()
+
+        self.assertEqual(len(result), 4)
+        self.assertEqual(result.values.tolist(), [1, 1, 1, 1])
+
+    def test_some_polygons_without_points(self):
+        points = np.array([(1,1), (1,2), (2,1)])
+        points = gpd.GeoDataFrame(geometry=gpd.points_from_xy(*points.T), crs=None)
+        polygons = data_utils.generate_grid_by_size(shapely.geometry.box(0, 0, 3, 3), 2, crs=None)
+
+        result = data_utils.group_points_by_polygons(points, polygons).size()
+
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result.values.tolist(), [1, 1, 1])
+
+    def test_some_points_without_polygon(self):
+        points = np.array([(1,1), (1,2), (2,1), (2,2), (10,10)])
+        points = gpd.GeoDataFrame(geometry=gpd.points_from_xy(*points.T), crs=None)
+        polygons = data_utils.generate_grid_by_size(shapely.geometry.box(0, 0, 3, 3), 2, crs=None)
+
+        result = data_utils.group_points_by_polygons(points, polygons).size()
+
+        self.assertEqual(len(result), 4)
+        self.assertEqual(result.values.tolist(), [1, 1, 1, 1])
