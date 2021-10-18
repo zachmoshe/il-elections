@@ -1,13 +1,19 @@
 """Utilities for plotting, mostly Colab and visualization stuff."""
 import enum
 import pathlib
+from typing import Optional
 
 import branca
 import folium
 import geopandas as gpd
+import importlib_resources
+import jinja2
+import numpy as np
 import pandas as pd
 import pyproj
 import shapely
+
+import il_elections.utils
 
 # Required in order to allow geopandas to load KML files (no need to install a new driver)
 gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
@@ -93,3 +99,52 @@ def ilmap(map_def, width='100%', height=400):  # pylint: disable=redefined-built
 
     fig.add_child(m)
     return m
+
+JINJA_ENV = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(
+        searchpath=importlib_resources.files(il_elections.utils) / 'html_templates'))
+
+def generate_tooltip_html_for_per_location_row(
+    per_location_row: pd.Series,
+    limit_num_parties: Optional[int] = None,
+    top_pct_coverage: Optional[float] = None,
+    remove_zero_votes: bool = True):
+    """Generates HTML popup for a per-location ballot's data."""
+    total_votes = sum(per_location_row['parties_votes'].values())
+    normed_votes = {k: v / total_votes for k, v in per_location_row['parties_votes'].items()}
+    sorted_normed_votes = sorted(normed_votes.items(), key=lambda x: x[1], reverse=True)
+
+    if remove_zero_votes:
+        sorted_normed_votes = [x for x in sorted_normed_votes if x[1]]
+
+    limit_idx = min(
+        limit_num_parties or len(sorted_normed_votes),
+        np.where(np.cumsum([x[1] for x in sorted_normed_votes]) > top_pct_coverage)[
+            0][0] + 1 if top_pct_coverage else len(sorted_normed_votes),
+    )
+    sorted_normed_votes = sorted_normed_votes[:limit_idx]
+    parties_data_to_display = [(k, per_location_row['parties_votes'][k], v)
+                                for k, v in sorted_normed_votes]
+
+    locality_str = '/'.join(per_location_row['locality_name'])
+    location_str = '/'.join(per_location_row['location_name'])
+    address_str = '/'.join(per_location_row['address'])
+    location = ', '.join([x for x in [locality_str, location_str, address_str] if x])
+
+    ballot_ids_str = ', '.join(per_location_row['ballot_id'])
+
+    num_registered_voters = per_location_row['num_registered_voters']
+    num_voted = per_location_row['num_voted']
+    num_approved = per_location_row['num_approved']
+    num_disqualified = per_location_row['num_disqualified']
+
+    tmpl = JINJA_ENV.get_template('per_location_tooltip.html.jinja2')
+
+    return tmpl.render(
+        parties_data=parties_data_to_display,
+        location=location,
+        ballot_ids=ballot_ids_str,
+        num_registered_voters=num_registered_voters,
+        num_voted=num_voted,
+        num_approved=num_approved,
+        num_disqualified=num_disqualified)

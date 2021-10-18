@@ -22,6 +22,7 @@ Shapely = "^1.7.1"
 branca = "^0.4.2"
 folium = "^0.12.1"
 pygeos = "^0.10.2"
+Jinja2 = "^3.0.2"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.5.7"

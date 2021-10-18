@@ -1,0 +1,60 @@
+<style>
+  .main-voting-table {
+  }
+  .party-cell {
+    text-align: right;
+  }
+  .num-votes-cell {
+    padding-right: 0.25em;
+    padding-left: 1em;
+  }
+  .voting-disqualified {
+    color: red;
+  }
+  .voting-approved {
+    color: green;
+  }
+  .voting-pct {
+    color: grey;
+    font-size: 0.8em;
+  }
+  .votes-bar-cell {
+    width: 100px;
+  }
+  .votes-bar {
+    background-color: dodgerblue;
+    white-space: nowrap;
+  }
+  .ballot-info {
+    min-width: 20em;
+  }
+</style>
+
+<div class="ballot-info">
+  <b>Location:</b> {{location}}
+</div>
+<div class="ballot-info">
+  <b>Ballot IDs:</b> {{ballot_ids}}
+</div>
+<div style="display: flex">
+  <div><b>Votes:&nbsp;</b></div>
+  <div style="text-align: right">
+    <span>{{num_voted}}</span><br>
+    <span class="voting-disqualified">{{num_disqualified}}</span>-<span class="voting-approved">{{num_approved}}</span>
+  </div>
+  <div>
+    &nbsp;/ {{num_registered_voters}}
+    <span class="voting-pct">{{(100 * num_voted / num_registered_voters) | round}}%</span>
+  </div>
+</div>
+<table class="main-voting-table">
+  {% for party_name, party_votes, party_votes_pct in parties_data %}
+    <tr>
+      <td class="party-cell">{{party_name}}</td>
+      <td class="num-votes-cell">{{party_votes}}</td>
+      <td class="votes-bar-cell">
+        <div class="votes-bar" style="width: {{party_votes_pct * 100}}%;">&nbsp;</div>
+      </td>
+    </tr>
+  {% endfor %}
+</table>
