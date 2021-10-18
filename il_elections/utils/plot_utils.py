@@ -148,3 +148,19 @@ def generate_tooltip_html_for_per_location_row(
         num_voted=num_voted,
         num_approved=num_approved,
         num_disqualified=num_disqualified)
+
+
+def create_ballots_feature_group(
+    ballots_per_location_data: gpd.GeoDataFrame,
+    feature_group_name: str = 'Ballots Info',
+    voting_top_pct_coverage: float = 0.9):
+    """Creates a folium.FeatureGroup layer with all ballots info including voting tooltips."""
+
+    grp = folium.FeatureGroup(feature_group_name)
+    for _, row in ballots_per_location_data.to_crs(PROJ_LNGLAT).iterrows():
+        html_str = generate_tooltip_html_for_per_location_row(
+            row, top_pct_coverage=voting_top_pct_coverage)
+        popup = folium.Popup(html_str)
+        grp.add_child(
+            folium.Circle(location=(row['geometry'].y, row['geometry'].x), radius=1, popup=popup))
+    return grp
