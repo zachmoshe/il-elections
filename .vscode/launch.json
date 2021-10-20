@@ -5,14 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Test: Enrich Metadata",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/test_enrich_metadata.py",
+            "console": "integratedTerminal",
+            "args": [
+                // "--campaign=knesset-20",
+                // "--localities=966"
+            ]
+        },
+        {
             "name": "Preprocessing Pipeline",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/il_elections/pipelines/preprocessing/preprocessing_main.py",
-            "args": ["--override"],  //, "--single_campaign=knesset-21"],
+            "args": [
+                "--override",
+                // "--single_campaign=knesset-18"
+            ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
-            "env": {"PYTHONPATH": ".:$PYTHONPATH"}
+            "env": {
+                "PYTHONPATH": ".:$PYTHONPATH"
+            }
         }
     ]
 }

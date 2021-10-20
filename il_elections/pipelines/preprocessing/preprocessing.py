@@ -2,6 +2,7 @@
 from concurrent import futures
 import dataclasses
 import datetime
+import functools as ft
 import itertools as it
 import pathlib
 import re
@@ -10,6 +11,7 @@ from typing import Iterator, TypeVar, Sequence, Tuple, Mapping
 from absl import logging
 import numpy as np
 import pandas as pd
+import shapely.geometry
 import yaml
 
 
@@ -91,6 +93,7 @@ def load_campaign_data(config: CampaignConfig) -> CampaignData:
 
 _NON_ALPHANUMERIC_SEQUENCE = re.compile('[^a-z0-9\u0590-\u05ff]+', flags=re.IGNORECASE)
 _ISRAEL = 'ישראל'
+_VILLAGE = 'יישוב'
 
 def _strip_string(s):
     if pd.isna(s):
@@ -112,24 +115,12 @@ def _normalize_optional_addresses(
         address + ', ' + locality_name + ', ' + _ISRAEL,
         location_name + ', ' + locality_name + ', ' + _ISRAEL,
         location_name + ' ' + address + ', ' + locality_name  + ', ' + _ISRAEL,
-        locality_name + ', ' + _ISRAEL,  # In case nothing else matched, we use the city center.
-        _ISRAEL,  # As a really last-resort...
+        locality_name,  # In case nothing else matched, we use the city center.
     ]
 
 
-_NUM_PANDAS_APPLY_THREADS = 8
-def _pandas_apply_multithreaded(df, func):
-    """Applies the given `func` on `df` in parallel.
-    (could be a DataFrame or a Series if `func` can handle it).
-    """
-    chunks = np.array_split(df, _NUM_PANDAS_APPLY_THREADS)
-    with futures.ThreadPoolExecutor(_NUM_PANDAS_APPLY_THREADS) as exc:
-        results = pd.concat(exc.map(
-            lambda df: df.apply(func),
-            chunks))
-    return results
 
-def _is_lng_lat_legal(geodata: geodata_fetcher.GeoDataResults):
+def _within_israel_bounds(geodata: geodata_fetcher.GeoDataResults):
     """Checks if lng/lat boundaries are within Israel (approx.)"""
     return (34. < geodata.longitude < 36.) and (29. < geodata.latitude < 34.)  # pylint: disable=chained-comparison
 
@@ -140,6 +131,42 @@ _NON_GEOGRAPHICAL_LOCALITY_IDS = set([
     '99999',  # External votes (knesset-21 only).
     '9999',  # External votes (knesset-22/23/24 only).
 ])
+
+# Approximation of 1 KM in lat/lng degree units. Very rough. Only somewhat accurate around Israel.
+_KM_IN_DEGREES = 0.01
+
+
+def _enrich_strategy(addresses, locality_center, fetcher):
+    """Enriches a sequence of possible ordered sequences of addresses for a ballot.
+
+    Tries one by one until a result comes back from the GeoCode fetcher which is valid and not too
+    far away from the locality center.
+    """
+    for address in addresses:
+        geodata = fetcher.fetch_geocode_data(address)
+        if geodata is None:
+            continue
+
+        # Calculate distance from locality_center
+        geodata_point = shapely.geometry.Point(geodata.longitude, geodata.latitude)
+        geodata_distance_from_center = geodata_point.distance(locality_center)
+
+        if _within_israel_bounds(geodata) and geodata_distance_from_center < 10 * _KM_IN_DEGREES:
+            return pd.Series({'lat': geodata.latitude, 'lng': geodata.longitude})
+    return pd.Series({'lat': None, 'lng': None})
+
+
+def _enrich_per_locality(locality_name, ldf, fetcher):
+    """Enriches all ballots from the same locality together."""
+    r = fetcher.fetch_geocode_data(locality_name)
+    if r is None or not _within_israel_bounds(r):
+        r = fetcher.fetch_geocode_data(_VILLAGE + ' ' + locality_name)
+    if r is None or not _within_israel_bounds(r):
+        raise ValueError(f'could\'t find locality geocoding for "{locality_name}"')
+    locality_center = shapely.geometry.Point(r.longitude, r.latitude)
+
+    res = ldf.apply(ft.partial(_enrich_strategy, locality_center=locality_center, fetcher=fetcher))
+    return res
 
 
 def enrich_metadata_with_geolocation(metadata_df: pd.DataFrame) -> pd.DataFrame:
@@ -153,17 +180,15 @@ def enrich_metadata_with_geolocation(metadata_df: pd.DataFrame) -> pd.DataFrame:
             axis='columns')
         )
     fetcher = geodata_fetcher.GeoDataFetcher()
-    def _enrich_strategy(addresses):
-        for address in addresses:
-            geodata = fetcher.fetch_geocode_data(address)
-            if geodata is not None and _is_lng_lat_legal(geodata):
-                return geodata
-        return None
-    geodata = _pandas_apply_multithreaded(
-        normalized_addresses_options, _enrich_strategy)
-    metadata_df['lat'] = geodata.apply(lambda g: g.latitude)
-    metadata_df['lng'] = geodata.apply(lambda g: g.longitude)
-    return metadata_df
+
+    grouped = normalized_addresses_options.groupby(metadata_df['locality_name'])
+    with futures.ThreadPoolExecutor() as exc:
+        all_enriched = exc.map(
+            lambda x: _enrich_per_locality(*x, fetcher=fetcher),
+            list(grouped))
+
+    enriched = pd.concat(list(all_enriched))
+    return metadata_df.join(enriched)
 
 
 def _get_ballot_index(ballots_dataframe, drop_subballot=False):
