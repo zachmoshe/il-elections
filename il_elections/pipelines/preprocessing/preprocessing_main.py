@@ -30,7 +30,7 @@ _FLAG_OVERRIDE = flags.DEFINE_bool(
 _FLAG_OUTPUT_FODLER = flags.DEFINE_string(
     'output_folder', _DEFAULT_OUTPUT_FOLDER,
     'Output folder for preprocessed results')
-_FLAG_SINGLE_CAMPaIGN = flags.DEFINE_string(
+_FLAG_SINGLE_CAMPAIGN = flags.DEFINE_string(
     'single_campaign', None, 'Only run this campaign from the config (None runs all)')
 
 
@@ -72,7 +72,7 @@ def main(_):
     config = preprocessing.PreprocessingConfig.from_yaml(
         _FLAG_CONFIG_FILE.value)
 
-    single_campaign = _FLAG_SINGLE_CAMPaIGN.value
+    single_campaign = _FLAG_SINGLE_CAMPAIGN.value
     if single_campaign:
         campaigns_by_name = {campaign.metadata.name: campaign for campaign in config.campaigns}
         if single_campaign not in campaigns_by_name:
