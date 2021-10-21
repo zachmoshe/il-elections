@@ -2,21 +2,18 @@
 import dataclasses
 from typing import Optional
 import os
-import re
 
 import googlemaps
 import importlib_resources
 import pandas as pd
 
 import il_elections.data
+from il_elections.utils import data_utils
 from il_elections.utils import locally_memoize
 
 
 _GEOCODING_API_KEY_ENV_VAR = 'GEOCODING_API_KEY'
 _KNOWN_ADDRESSES_GEOLOCATIONS_FILENAME = 'known_addresses_geolocations.csv'
-
-def _clean_address(address):
-    return re.sub(r'[^\w\d]+', ' ', address).strip()
 
 
 def _load_known_addresses_geolocations(filename):
@@ -24,7 +21,7 @@ def _load_known_addresses_geolocations(filename):
                      names=['lat', 'lng', 'address'], comment='#')
     df['lat'] = df['lat'].astype(float)
     df['lng'] = df['lng'].astype(float)
-    df['address'] = df['address'].astype('str').apply(_clean_address)
+    df['address'] = df['address'].astype('str').apply(data_utils.clean_hebrew_address)
     return df.set_index('address')
 
 _KNOWN_ADDRESSES_GEOLOCATIONS = _load_known_addresses_geolocations(
@@ -61,7 +58,7 @@ class GeoDataFetcher:
 
     def fetch_geocode_data(self, address: str) -> Optional[GeoDataResults]:
         """Fetches Google GeoLocation data for an address."""
-        address = _clean_address(address)
+        address = data_utils.clean_hebrew_address(address)
 
         if address in _KNOWN_ADDRESSES_GEOLOCATIONS.index:
             return GeoDataResults(

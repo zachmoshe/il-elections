@@ -174,3 +174,21 @@ class AggregatePartiesVotesTest(unittest.TestCase):
                   {'b': 1, 'c': 1}]
         result = data_utils.aggregate_parties_votes(counts)
         self.assertEqual(result, {'a': 1, 'b': 3, 'c': 1})
+
+
+class CleanHebrewAddressTest(unittest.TestCase):
+
+    @parameterized.expand((
+        # NOTICE: Due to RTL in the IDE, the 2nd and 3rd arguments *appear* backwards!
+        ('single_word', 'רעננה', 'רעננה'),
+        ('multi_words', 'תל אביב יפו', 'תל אביב יפו'),
+        ('multi_words_many_spaces', 'תל - אביב   יפו', 'תל אביב יפו'),
+        ('contains_numbers', 'קריית---4', 'קריית 4'),
+        ('none', None, ''),
+        ('empty', '', ''),
+        ('real1', 'מועדון ע"י הכל-בו', 'מועדון ע י הכל בו'),
+        ('real2', 'בי"ס אל-טור (א. ספורט)', 'בי ס אל טור א ספורט'),
+    ))
+    def test_correctness(self, _, address, expected_result):
+        result = data_utils.clean_hebrew_address(address)
+        self.assertEqual(result, expected_result)

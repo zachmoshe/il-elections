@@ -1,12 +1,20 @@
 """Utilities to ease working with the ballots geo data."""
 import itertools as it
+import re
 
-from typing import Iterator, Sequence, Mapping
+from typing import Iterator, Sequence, Mapping, Optional
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 import shapely.geometry
 
 from il_elections.utils import plot_utils
+
+
+def clean_hebrew_address(address_string: Optional[str]):
+    if pd.isna(address_string):
+        return ''
+    return re.sub(r'[^\w\d]+', ' ', address_string).strip()
 
 
 def _generate_covering_polygons_grid_cells_by_grid_size(

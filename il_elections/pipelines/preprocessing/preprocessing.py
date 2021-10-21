@@ -5,7 +5,6 @@ import datetime
 import functools as ft
 import itertools as it
 import pathlib
-import re
 from typing import Iterator, TypeVar, Sequence, Tuple, Mapping
 
 from absl import logging
@@ -18,6 +17,7 @@ import yaml
 from il_elections.data import data
 from il_elections.data import geodata_fetcher
 from il_elections.data import parsers
+from il_elections.utils import data_utils
 
 
 BallotsVotesParserType = TypeVar('BallotsVotesParserType', bound=parsers.BallotsVotesParser)
@@ -91,15 +91,9 @@ def load_campaign_data(config: CampaignConfig) -> CampaignData:
     return CampaignData(metadata=metadata, votes=votes)
 
 
-_NON_ALPHANUMERIC_SEQUENCE = re.compile('[^a-z0-9\u0590-\u05ff]+', flags=re.IGNORECASE)
 _ISRAEL = 'ישראל'
 _VILLAGE = 'יישוב'
 
-def _strip_string(s):
-    if pd.isna(s):
-        return ''
-    s = _NON_ALPHANUMERIC_SEQUENCE.sub(' ', s)
-    return s.strip()
 
 def _normalize_optional_addresses(
     locality_name: str, location_name: str, address: str) -> Sequence[str]:
@@ -107,9 +101,9 @@ def _normalize_optional_addresses(
     # Notice that since we process Dataframes, it would have been more efficient to
     # work on the whole column at once. This method handles addresses separately
     # to allow for more flexibility in tweaking the strings.
-    locality_name = _strip_string(locality_name)
-    location_name = _strip_string(location_name)
-    address = _strip_string(address)
+    locality_name = data_utils.clean_hebrew_address(locality_name)
+    location_name = data_utils.clean_hebrew_address(location_name)
+    address = data_utils.clean_hebrew_address(address)
 
     return [
         address + ', ' + locality_name + ', ' + _ISRAEL,
@@ -136,7 +130,7 @@ _NON_GEOGRAPHICAL_LOCALITY_IDS = set([
 _KM_IN_DEGREES = 0.01
 
 
-def _enrich_strategy(addresses, locality_center, fetcher):
+def _enrich_addresses_strategy(addresses, locality_center, fetcher):
     """Enriches a sequence of possible ordered sequences of addresses for a ballot.
 
     Tries one by one until a result comes back from the GeoCode fetcher which is valid and not too
@@ -156,16 +150,22 @@ def _enrich_strategy(addresses, locality_center, fetcher):
     return pd.Series({'lat': None, 'lng': None})
 
 
-def _enrich_per_locality(locality_name, ldf, fetcher):
-    """Enriches all ballots from the same locality together."""
+def _enrich_locality_strategy(locality_name, fetcher):
     r = fetcher.fetch_geocode_data(locality_name)
     if r is None or not _within_israel_bounds(r):
         r = fetcher.fetch_geocode_data(_VILLAGE + ' ' + locality_name)
     if r is None or not _within_israel_bounds(r):
         raise ValueError(f'could\'t find locality geocoding for "{locality_name}"')
+    return r
+
+
+def _enrich_per_locality(locality_name, ldf, fetcher):
+    """Enriches all ballots from the same locality together."""
+    r = _enrich_locality_strategy(locality_name, fetcher)
     locality_center = shapely.geometry.Point(r.longitude, r.latitude)
 
-    res = ldf.apply(ft.partial(_enrich_strategy, locality_center=locality_center, fetcher=fetcher))
+    res = ldf.apply(ft.partial(_enrich_addresses_strategy,
+                               locality_center=locality_center, fetcher=fetcher))
     return res
 
 
