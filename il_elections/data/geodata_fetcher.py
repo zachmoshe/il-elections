@@ -33,7 +33,7 @@ class GeoDataResults:
     latitude: float
 
 _CACHE_ONLY_MODE = os.environ.get('GEOFETCHER_CACHE_ONLY', '').lower() in ('1', 'true', 'yes')
-@locally_memoize.locally_memoize(cache_only=_CACHE_ONLY_MODE)
+@locally_memoize.locally_memoize(cache_only=_CACHE_ONLY_MODE, ignore_values=(None,))
 def _geocode_address(address, api_key):
     gmaps = googlemaps.Client(api_key)
     try:
