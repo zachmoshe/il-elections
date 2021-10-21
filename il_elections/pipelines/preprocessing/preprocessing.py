@@ -105,13 +105,21 @@ def _normalize_optional_addresses(
     location_name = data_utils.clean_hebrew_address(location_name)
     address = data_utils.clean_hebrew_address(address)
 
+    if address == locality_name:
+        # This happens in very small villages where the location is meaningless, like 'grocery
+        # store'. In that case, since some localities names are generic (like רחוב) we're more
+        # likely to get a false match if we try all combinations.
+        return [
+            _VILLAGE + ' ' + locality_name,
+            locality_name,
+        ]
+
     return [
         address + ', ' + locality_name + ', ' + _ISRAEL,
         location_name + ', ' + locality_name + ', ' + _ISRAEL,
         location_name + ' ' + address + ', ' + locality_name  + ', ' + _ISRAEL,
         locality_name,  # In case nothing else matched, we use the city center.
     ]
-
 
 
 def _within_israel_bounds(geodata: geodata_fetcher.GeoDataResults):
