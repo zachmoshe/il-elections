@@ -1,6 +1,6 @@
 """Fetches geo-location data for an address using Google GeoLocation API."""
 import dataclasses
-from typing import Optional
+from typing import Optional, Sequence
 import os
 
 import googlemaps
@@ -45,7 +45,8 @@ def _geocode_address(address, api_key):
 class GeoDataFetcher:
     """Uses Google geocoding API to provide geo location for addresses."""
 
-    def __init__(self, geocoding_api_key: Optional[str] = None):
+    def __init__(self, geocoding_api_key: Optional[str] = None,
+                 duplicate_known_addresses_with_prefixes: Sequence[str] = ()):
         self.api_key = geocoding_api_key or os.environ[_GEOCODING_API_KEY_ENV_VAR]
         if self.api_key is None:
             raise ValueError(
@@ -56,14 +57,21 @@ class GeoDataFetcher:
         # just to validate on init.
         googlemaps.Client(self.api_key)
 
+        known_with_prefixes = pd.DataFrame([
+            data.rename(prefix + ' ' + index)
+            for prefix in duplicate_known_addresses_with_prefixes
+            for index, data in _KNOWN_ADDRESSES_GEOLOCATIONS.iterrows()])
+        self.known_addresses = pd.concat((_KNOWN_ADDRESSES_GEOLOCATIONS, known_with_prefixes))
+
+
     def fetch_geocode_data(self, address: str) -> Optional[GeoDataResults]:
         """Fetches Google GeoLocation data for an address."""
         address = data_utils.clean_hebrew_address(address)
 
-        if address in _KNOWN_ADDRESSES_GEOLOCATIONS.index:
+        if address in self.known_addresses.index:
             return GeoDataResults(
-                longitude=_KNOWN_ADDRESSES_GEOLOCATIONS.loc[address]['lng'],
-                latitude=_KNOWN_ADDRESSES_GEOLOCATIONS.loc[address]['lat'])
+                longitude=self.known_addresses.loc[address]['lng'],
+                latitude=self.known_addresses.loc[address]['lat'])
         results = _geocode_address(address, self.api_key)
         if results:
             # Take the first one. GMaps should only return one result except on

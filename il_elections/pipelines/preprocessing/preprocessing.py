@@ -159,12 +159,12 @@ def _enrich_addresses_strategy(addresses, locality_center, fetcher):
 
 
 def _enrich_locality_strategy(locality_name, fetcher):
-    r = fetcher.fetch_geocode_data(locality_name)
-    if r is None or not _within_israel_bounds(r):
-        r = fetcher.fetch_geocode_data(_VILLAGE + ' ' + locality_name)
-    if r is None or not _within_israel_bounds(r):
-        raise ValueError(f'could\'t find locality geocoding for "{locality_name}"')
-    return r
+    addresses_to_search = [_VILLAGE + ' ' + locality_name, locality_name]
+    for add in addresses_to_search:
+        r = fetcher.fetch_geocode_data(add)
+        if r is not None and _within_israel_bounds(r):
+            return r
+    raise ValueError(f'could\'t find locality geocoding for "{locality_name}"')
 
 
 def _enrich_per_locality(locality_name, ldf, fetcher):
@@ -187,7 +187,7 @@ def enrich_metadata_with_geolocation(metadata_df: pd.DataFrame) -> pd.DataFrame:
             lambda x: _normalize_optional_addresses(*x),
             axis='columns')
         )
-    fetcher = geodata_fetcher.GeoDataFetcher()
+    fetcher = geodata_fetcher.GeoDataFetcher(duplicate_known_addresses_with_prefixes=(_VILLAGE,))
 
     grouped = normalized_addresses_options.groupby(metadata_df['locality_name'])
     with futures.ThreadPoolExecutor() as exc:
