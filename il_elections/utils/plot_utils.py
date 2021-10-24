@@ -153,7 +153,9 @@ def generate_tooltip_html_for_per_location_row(  # pylint: disable=too-many-loca
 def create_ballots_feature_group(
     ballots_per_location_data: gpd.GeoDataFrame,
     feature_group_name: str = 'Ballots Info',
-    voting_top_pct_coverage: float = 0.9):
+    voting_top_pct_coverage: float = 0.9,
+    circle_color: str = 'black',
+    circle_radius: float = 1.):
     """Creates a folium.FeatureGroup layer with all ballots info including voting tooltips."""
 
     grp = folium.FeatureGroup(feature_group_name)
@@ -162,5 +164,8 @@ def create_ballots_feature_group(
             row, top_pct_coverage=voting_top_pct_coverage)
         popup = folium.Popup(html_str)
         grp.add_child(
-            folium.Circle(location=(row['geometry'].y, row['geometry'].x), radius=1, popup=popup))
+            folium.Circle(location=(row['geometry'].y, row['geometry'].x),
+                          radius=circle_radius,
+                          color=circle_color,
+                          popup=popup))
     return grp
