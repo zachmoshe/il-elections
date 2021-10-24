@@ -1,5 +1,6 @@
 """Utilities for plotting, mostly Colab and visualization stuff."""
 import enum
+import itertools as it
 import pathlib
 from typing import Optional
 
@@ -110,6 +111,7 @@ def generate_tooltip_html_for_per_location_row(  # pylint: disable=too-many-loca
     top_pct_coverage: Optional[float] = None,
     remove_zero_votes: bool = True):
     """Generates HTML popup for a per-location ballot's data."""
+
     total_votes = sum(per_location_row['parties_votes'].values())
     normed_votes = {k: v / total_votes for k, v in per_location_row['parties_votes'].items()}
     sorted_normed_votes = sorted(normed_votes.items(), key=lambda x: x[1], reverse=True)
@@ -126,10 +128,10 @@ def generate_tooltip_html_for_per_location_row(  # pylint: disable=too-many-loca
     parties_data_to_display = [(k, per_location_row['parties_votes'][k], v)
                                 for k, v in sorted_normed_votes]
 
-    locality_str = '/'.join(per_location_row['locality_name'])
-    location_str = '/'.join(per_location_row['location_name'])
-    address_str = '/'.join(per_location_row['address'])
-    location = ', '.join([x for x in [locality_str, location_str, address_str] if x])
+    location = ' / '.join(
+        f'{location}, {address}'
+        for location, address in it.zip_longest(
+            per_location_row['location_name'], per_location_row['address']))
 
     ballot_ids_str = ', '.join(per_location_row['ballot_id'])
 
@@ -142,6 +144,8 @@ def generate_tooltip_html_for_per_location_row(  # pylint: disable=too-many-loca
 
     return tmpl.render(
         parties_data=parties_data_to_display,
+        locality_id=per_location_row['locality_id'],
+        locality_name=per_location_row['locality_name'],
         location=location,
         ballot_ids=ballot_ids_str,
         num_registered_voters=num_registered_voters,
