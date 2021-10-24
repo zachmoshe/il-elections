@@ -104,7 +104,7 @@ JINJA_ENV = jinja2.Environment(
     loader=jinja2.FileSystemLoader(
         searchpath=importlib_resources.files(il_elections.utils) / 'html_templates'))
 
-def generate_tooltip_html_for_per_location_row(
+def generate_tooltip_html_for_per_location_row(  # pylint: disable=too-many-locals
     per_location_row: pd.Series,
     limit_num_parties: Optional[int] = None,
     top_pct_coverage: Optional[float] = None,
