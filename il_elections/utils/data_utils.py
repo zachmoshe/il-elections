@@ -1,8 +1,8 @@
 """Utilities to ease working with the ballots geo data."""
 import itertools as it
 import re
+from typing import Iterator, Sequence, Mapping, Optional, Union
 
-from typing import Iterator, Sequence, Mapping, Optional
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -60,15 +60,25 @@ def _generate_grid(bounded_polygon: shapely.geometry.Polygon,
     return grid
 
 
-def generate_grid_by_size(bounded_polygon, grid_size, crs=plot_utils.PROJ_UTM):
+def generate_grid_by_size(
+    bounded_polygon: Union[shapely.geometry.Polygon, plot_utils.Maps],
+    grid_size: int,
+    crs: str = plot_utils.PROJ_UTM):
     """Generates a grid that covers the polygon with (size x size) cells."""
+    if isinstance(bounded_polygon, plot_utils.Maps):
+        bounded_polygon = bounded_polygon.value
     grid_polygons = list(_generate_covering_polygons_grid_cells_by_grid_size(
         bounded_polygon, grid_size))
     return _generate_grid(bounded_polygon, grid_polygons, crs)
 
 
-def generate_grid_by_length(bounded_polygon, grid_length, crs=plot_utils.PROJ_UTM):
+def generate_grid_by_length(
+    bounded_polygon: Union[shapely.geometry.Polygon, plot_utils.Maps],
+    grid_length: float,
+    crs: str = plot_utils.PROJ_UTM):
     """Generates a grid that covers the polygon where every cell is at size (length x length)."""
+    if isinstance(bounded_polygon, plot_utils.Maps):
+        bounded_polygon = bounded_polygon.value
     grid_polygons = list(_generate_covering_polygons_grid_cells_by_grid_length(
         bounded_polygon, grid_length))
     return _generate_grid(bounded_polygon, grid_polygons, crs)
