@@ -8,15 +8,20 @@ Data was obtained from the [Israeli Central Elections Committee](https://www.bec
 
 ## How to set up environment
 
-- You'll need [pyenv](https://github.com/pyenv/pyenv#installation) and [poetry](https://python-poetry.org/docs/#installation).
+- Install [pyenv](https://github.com/pyenv/pyenv#installation).
 - Install Python. On MacOS, use this (handles some requirements and compiler paths):
 ```
 bin/install_python_on_macos.sh
 ```
-If not on MacOS install Python 3.9.7:
+If not on MacOS install Python:
 ```
-pyenv install 3.9.7
+pyenv install $(cat .python-version)
 ```
+- Create a virtualenv
+```
+python -m venv .venv
+```
+- Install [poetry](https://python-poetry.org/docs/#installation) (inside the virtual env).
 - Install requirements:
 ```
 poetry install
