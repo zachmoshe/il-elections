@@ -39,11 +39,11 @@ _ISR_ADM1 = (
     .set_index('shapeName')
     .to_crs(PROJ_UTM))
 
-def generate_circle_utm(center, radius_meters):
+def generate_circle(center, radius_meters):
     return shapely.geometry.Point(center).buffer(radius_meters)
 
 
-def generate_rectangle_utm(min_x, min_y, max_x, max_y):
+def generate_rectangle(min_x, min_y, max_x, max_y):
     return shapely.geometry.Polygon(
         [(min_x, min_y), (min_x, max_y), (max_x, max_y), (max_x, min_y)])
 
@@ -74,10 +74,10 @@ class Maps(enum.Enum):
     SOUTH = _ISR_ADM1.loc['South District'].geometry
 
     # Cities
-    BEERSHEVA = generate_circle_utm(center=(671041.49, 3458353.12), radius_meters=5000)
-    HAIFA = generate_circle_utm(center=(687075.41, 3631881.30), radius_meters=5000)
-    JERUSALEM = generate_circle_utm(center=(709616.69, 3517636.21), radius_meters=5000)
-    TLV = generate_circle_utm(center=(668017.45, 3550814.14), radius_meters=2500)
+    BEERSHEVA = generate_circle(center=(671041.49, 3458353.12), radius_meters=5000)
+    HAIFA = generate_circle(center=(687075.41, 3631881.30), radius_meters=5000)
+    JERUSALEM = generate_circle(center=(709616.69, 3517636.21), radius_meters=5000)
+    TLV = generate_circle(center=(668017.45, 3550814.14), radius_meters=2500)
 
     @property
     def center(self):
