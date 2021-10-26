@@ -24,7 +24,7 @@ def main(_):
 
     for campaign_config in config.campaigns:
         # Load data
-        data = preprocessing.load_campaign_data(campaign_config)
+        data = preprocessing.load_raw_campaign_data(campaign_config)
 
         metadata = data.metadata.df
         if _FLAG_LOCALITIES.value:
