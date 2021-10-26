@@ -1,7 +1,6 @@
 """Utilities for the preprocessing pipeline."""
 from concurrent import futures
 import dataclasses
-import datetime
 import functools as ft
 import itertools as it
 import pathlib
@@ -31,16 +30,13 @@ class CampaignDataLocation:
     ballots_metadata_path: pathlib.Path
     ballots_metadata_format: str
 
-@dataclasses.dataclass(frozen=True)
-class CampaignMetadata:
-    name: str
-    date: datetime.date
 
 @dataclasses.dataclass(frozen=True)
 class CampaignConfig:
     """Holds all the relevant config needed to process a single campaign."""
-    metadata: CampaignMetadata
+    metadata: data_utils.CampaignMetadata
     data: CampaignDataLocation
+
 
 @dataclasses.dataclass(frozen=True)
 class PreprocessingConfig:
@@ -60,7 +56,7 @@ class PreprocessingConfig:
         for obj in obj['preprocessing_config']['campaigns']:
             campaign_configs.append(
                 CampaignConfig(
-                    metadata=CampaignMetadata(
+                    metadata=data_utils.CampaignMetadata(
                         name=obj['campaign_name'],
                         date=obj['campaign_date'],
                     ),
@@ -74,13 +70,13 @@ class PreprocessingConfig:
 
 
 @dataclasses.dataclass(frozen=True)
-class CampaignData:
+class RawCampaignData:
     """Holds the processing results from a single campaign."""
     metadata: data.BallotsMetadata
     votes: data.BallotsVotes
 
 
-def load_campaign_data(config: CampaignConfig) -> CampaignData:
+def load_raw_campaign_data(config: CampaignConfig) -> RawCampaignData:
     """Loads and parses the metadata and votes files for a campaign."""
     metadata_parser = parsers.get_ballots_metadata_parser(config.data.ballots_metadata_format)
     metadata = metadata_parser.parse(pathlib.Path(config.data.ballots_metadata_path))
@@ -88,7 +84,7 @@ def load_campaign_data(config: CampaignConfig) -> CampaignData:
     votes_parser = parsers.get_ballots_votes_parser(config.data.ballots_votes_format)
     votes = votes_parser.parse(pathlib.Path(config.data.ballots_votes_path))
 
-    return CampaignData(metadata=metadata, votes=votes)
+    return RawCampaignData(metadata=metadata, votes=votes)
 
 
 _ISRAEL = 'ישראל'
@@ -207,7 +203,7 @@ def _get_ballot_index(ballots_dataframe, drop_subballot=False):
 
 
 def preprocess(config: PreprocessingConfig
-               ) -> Iterator[Tuple[CampaignMetadata, pd.DataFrame]]:
+               ) -> Iterator[Tuple[data_utils.CampaignMetadata, pd.DataFrame]]:
     """Runs a preprocessing pipeline for a given config (multiple campaigns).
     Yields tuples of (campaign_metadata, dataframe) for every campaign.
     """
@@ -218,11 +214,11 @@ def preprocess(config: PreprocessingConfig
         campaign_name = campaign_config.metadata.name
 
         logging.info(f'Loading data for campaign {campaign_name}')
-        campaign_data = load_campaign_data(campaign_config)
+        raw_campaign_data = load_raw_campaign_data(campaign_config)
 
         logging.info('Enriching with geolocation')
-        votes_df = campaign_data.votes.df
-        metadata_df = campaign_data.metadata.df
+        votes_df = raw_campaign_data.votes.df
+        metadata_df = raw_campaign_data.metadata.df
         # Make sure all localities from `votes_df` exist in `metadata_df`. For the missing ones, add
         # an empty row to metadata with only the locality_name and a fake ballot_id so we can at
         # least enrich with the locality_name alone.

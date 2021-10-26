@@ -1,7 +1,11 @@
 """Utilities to ease working with the ballots geo data."""
+import dataclasses
+import datetime
 import itertools as it
+import pathlib
 import re
 from typing import Iterator, Sequence, Mapping, Optional, Union
+import yaml
 
 import geopandas as gpd
 import numpy as np
@@ -9,6 +13,19 @@ import pandas as pd
 import shapely.geometry
 
 from il_elections.utils import plot_utils
+
+
+@dataclasses.dataclass(frozen=True)
+class CampaignMetadata:
+    name: str
+    date: datetime.date
+
+
+@dataclasses.dataclass
+class PreprocessedCampaignData:
+    raw_votes: gpd.GeoDataFrame
+    per_location: gpd.GeoDataFrame
+    metadata: CampaignMetadata
 
 
 def clean_hebrew_address(address_string: Optional[str]):
@@ -110,3 +127,43 @@ def aggregate_parties_votes(parties_votes: Sequence[VotingCounts]) -> VotingCoun
                                 key=lambda x: x[0])
     return dict((party, sum(x[1] for x in items))
                 for party, items in it.groupby(sorted_votes_items, key=lambda x: x[0]))
+
+
+def load_preprocessed_campaign_data(
+    data_folder: pathlib.Path, campaign_name: str) -> PreprocessedCampaignData:
+    """Loading preprocessed data. Converting and aggregating based on the geo-data."""
+    data_path = data_folder / f'{campaign_name}.data'
+    metadata_path = data_folder / f'{campaign_name}.metadata'
+
+    with open(metadata_path, 'rt', encoding='utf8') as f:
+        metadata = CampaignMetadata(**yaml.safe_load(f))
+    data = pd.read_parquet(data_path)
+    # Dropping ballots without geo (should be only "external votes").
+    data = data.dropna(subset=['lat', 'lng'])
+
+    raw_votes_gdf = gpd.GeoDataFrame(
+        data,
+        geometry=gpd.points_from_xy(data['lng'], data['lat']),
+        crs=plot_utils.PROJ_LNGLAT).to_crs(plot_utils.PROJ_UTM)
+
+    _nanunique = lambda x: list(np.unique(x.dropna()))
+    per_location_df = data.assign(num_ballots=1).groupby(['lng', 'lat']).agg({
+        'num_ballots': np.sum,
+        'ballot_id': _nanunique,
+        'locality_id': 'first',
+        'locality_name': 'first',
+        'location_name': _nanunique,
+        'address': _nanunique,
+        'num_registered_voters': np.sum,
+        'num_voted': np.sum,
+        'num_disqualified': np.sum,
+        'num_approved': np.sum,
+        'parties_votes': aggregate_parties_votes,
+    }).reset_index()
+    per_location_gdf = gpd.GeoDataFrame(
+        per_location_df,
+        geometry=gpd.points_from_xy(per_location_df['lng'], per_location_df['lat']),
+        crs=plot_utils.PROJ_LNGLAT).to_crs(plot_utils.PROJ_UTM)
+
+    return PreprocessedCampaignData(
+        raw_votes=raw_votes_gdf, per_location=per_location_gdf, metadata=metadata)
