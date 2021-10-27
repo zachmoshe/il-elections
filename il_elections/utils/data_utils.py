@@ -167,3 +167,15 @@ def load_preprocessed_campaign_data(
 
     return PreprocessedCampaignData(
         raw_votes=raw_votes_gdf, per_location=per_location_gdf, metadata=metadata)
+
+
+def norm_parties_votes_to_pct(votes: VotingCounts) -> Mapping[str, float]:
+    """Normalized each party votes to pct of total votes."""
+    total_votes = sum(votes.values())
+    normed_votes = {k: (v / total_votes if total_votes else 0.) for k, v in votes.items()}
+    return normed_votes
+
+def project(parties_data: Mapping[str, float], weights: Mapping[str, float]) -> float:
+    """Projects votes counts by a linear set of weights."""
+    projected = sum(parties_data[k] * weights.get(k, 0.) for k in parties_data.keys())
+    return projected

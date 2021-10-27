@@ -192,3 +192,42 @@ class CleanHebrewAddressTest(unittest.TestCase):
     def test_correctness(self, _, address, expected_result):
         result = data_utils.clean_hebrew_address(address)
         self.assertEqual(result, expected_result)
+
+
+class NormPartiesVotesToPctTest(unittest.TestCase):
+    def test_no_votes(self):
+        votes = {'a': 0, 'b': 0}
+        result = data_utils.norm_parties_votes_to_pct(votes)
+        self.assertEqual({'a': 0., 'b': 0.}, result)
+
+    def test_all_votes_to_single_party(self):
+        votes = {'a': 10, 'b': 0}
+        result = data_utils.norm_parties_votes_to_pct(votes)
+        self.assertEqual({'a': 1., 'b': 0.}, result)
+
+    def test_mixed_voting(self):
+        votes = {'a': 10, 'b': 30}
+        result = data_utils.norm_parties_votes_to_pct(votes)
+        self.assertEqual({'a': .25, 'b': .75}, result)
+
+    def test_mixed_voting_with_zeros(self):
+        votes = {'a': 10, 'b': 30, 'c': 0}
+        result = data_utils.norm_parties_votes_to_pct(votes)
+        self.assertEqual({'a': .25, 'b': .75, 'c': 0.}, result)
+
+
+class ProjectTest(unittest.TestCase):
+    def test_single_party(self):
+        data = {'a': 1.234, 'b': 2.345}
+        weights = {'a': 1.}
+        self.assertEqual(1.234, data_utils.project(data, weights))
+
+    def test_multiple_parties(self):
+        data = {'a': 1., 'b': 2., 'c': 3.}
+        weights = {'a': 1., 'b': .5}
+        self.assertEqual(2., data_utils.project(data, weights))
+
+    def test_with_negatives_weights(self):
+        data = {'a': 1., 'b': 2., 'c': 3.}
+        weights = {'a': 1., 'b': .5, 'c': -1.}
+        self.assertEqual(-1., data_utils.project(data, weights))
