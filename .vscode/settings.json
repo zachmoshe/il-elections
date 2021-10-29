@@ -1,11 +1,9 @@
 {
-    "python.testing.autoTestDiscoverOnSaveEnabled": true,
-    "python.testing.unittestEnabled": false,
-    "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.testing.pytestArgs": [
-        "il_elections"
-    ],
+    "editor.rulers": [100],
+    "editor.formatOnType": true,
+    "editor.formatOnSaveMode": "modifications",
+    "editor.formatOnSave": false,
+
     "files.exclude": {
         "**/.git": true,
         "**/.svn": true,
@@ -17,15 +15,27 @@
         "**/.pytest_cache": true,
         "**/__pycache__": true
     },
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 10000,
+    "files.trimTrailingWhitespace": true,
+
     "git.ignoreLimitWarning": true,
+
+    "python.formatting.provider": "autopep8",
+    "python.formatting.autopep8Args": ["--max-line-length", "100"],
+
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
     "python.linting.lintOnSave": true,
     "python.linting.pylintArgs": ["--rcfile=.pylintrc"],
-    "editor.rulers": [100],
-    "files.autoSave": "afterDelay",
-    "files.autoSaveDelay": 10000,
-    "files.trimTrailingWhitespace": true,
-    "python.formatting.provider": "autopep8",
-    "python.formatting.autopep8Args": ["--max-line-length", "100"],
+
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": [
+        "il_elections"
+    ],
+
+    "problems.showCurrentInStatus": true,
 }
