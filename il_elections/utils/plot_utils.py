@@ -107,21 +107,24 @@ def generate_tooltip_html_for_per_location_row(  # pylint: disable=too-many-loca
     """Generates HTML popup for a per-location ballot's data."""
 
     total_votes = sum(per_location_row['parties_votes'].values())
-    normed_votes = {k: (v / total_votes if total_votes else 0.)
-                    for k, v in per_location_row['parties_votes'].items()}
-    sorted_normed_votes = sorted(normed_votes.items(), key=lambda x: x[1], reverse=True)
+    if total_votes == 0:
+        parties_data_to_display = []
+    else:
+        normed_votes = {k: v / total_votes
+                        for k, v in per_location_row['parties_votes'].items()}
+        sorted_normed_votes = sorted(normed_votes.items(), key=lambda x: x[1], reverse=True)
 
-    if remove_zero_votes:
-        sorted_normed_votes = [x for x in sorted_normed_votes if x[1]]
+        if remove_zero_votes:
+            sorted_normed_votes = [x for x in sorted_normed_votes if x[1]]
 
-    limit_idx = min(
-        limit_num_parties or len(sorted_normed_votes),
-        np.where(np.cumsum([x[1] for x in sorted_normed_votes]) > top_pct_coverage)[
-            0][0] + 1 if top_pct_coverage else len(sorted_normed_votes),
-    )
-    sorted_normed_votes = sorted_normed_votes[:limit_idx]
-    parties_data_to_display = [(k, per_location_row['parties_votes'][k], v)
-                                for k, v in sorted_normed_votes]
+        limit_idx = min(
+            limit_num_parties or len(sorted_normed_votes),
+            np.where(np.cumsum([x[1] for x in sorted_normed_votes]) > top_pct_coverage)[
+                0][0] + 1 if top_pct_coverage else len(sorted_normed_votes),
+        )
+        sorted_normed_votes = sorted_normed_votes[:limit_idx]
+        parties_data_to_display = [(k, per_location_row['parties_votes'][k], v)
+                                    for k, v in sorted_normed_votes]
 
     location = ' / '.join(
         f'{location}, {address}'
