@@ -107,7 +107,8 @@ def generate_tooltip_html_for_per_location_row(  # pylint: disable=too-many-loca
     """Generates HTML popup for a per-location ballot's data."""
 
     total_votes = sum(per_location_row['parties_votes'].values())
-    normed_votes = {k: v / total_votes for k, v in per_location_row['parties_votes'].items()}
+    normed_votes = {k: (v / total_votes if total_votes else 0.)
+                    for k, v in per_location_row['parties_votes'].items()}
     sorted_normed_votes = sorted(normed_votes.items(), key=lambda x: x[1], reverse=True)
 
     if remove_zero_votes:
