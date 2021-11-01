@@ -12,7 +12,7 @@ from il_elections.utils import plot_utils
 _DEFAULT_CONFIG_FILE = 'config/preprocessing_config.yaml'
 
 
-def debug_ballot_geodata_fetching(campaign_name, locality_id, ballot_id):
+def debug_ballot_geodata_fetching(campaign_name, locality_id, ballot_id):  # pylint: disable=too-many-locals
     """Plots a map with all addresses relevant to the given ballot."""
     config = preprocessing.PreprocessingConfig.from_yaml(pathlib.Path(_DEFAULT_CONFIG_FILE))
     campaign_config = [c for c in config.campaigns if c.metadata.name == campaign_name]
