@@ -132,25 +132,33 @@ _NON_GEOGRAPHICAL_LOCALITY_IDS = set([
 
 # Approximation of 1 KM in lat/lng degree units. Very rough. Only somewhat accurate around Israel.
 _KM_IN_DEGREES = 0.01
+MAX_ALLOWED_DISTANCE_FROM_LOCALITY_CENTER_KM = 10
 
-
-def _enrich_addresses_strategy(addresses, locality_center, fetcher):
+def _enrich_addresses_strategy(addresses, locality_center, locality_polygon, fetcher):
     """Enriches a sequence of possible ordered sequences of addresses for a ballot.
 
-    Tries one by one until a result comes back from the GeoCode fetcher which is valid and not too
-    far away from the locality center.
+    Tries one by one until a result comes back from the GeoCode fetcher which is valid and inside
+    the locality polygon. If locality polygon is not given, looks for a close distance from the
+    locality center.
     """
     for address in addresses:
         geodata = fetcher.fetch_geocode_data(address)
         if geodata is None:
             continue
 
-        # Calculate distance from locality_center
         geodata_point = shapely.geometry.Point(geodata.longitude, geodata.latitude)
-        geodata_distance_from_center = geodata_point.distance(locality_center)
+        if locality_polygon is not None:
+            is_valid = locality_polygon.contains(geodata_point)
+        else:
+            # Calculate distance from locality_center
+            geodata_distance_from_center = geodata_point.distance(locality_center)
+            is_valid = (
+                geodata_distance_from_center <
+                MAX_ALLOWED_DISTANCE_FROM_LOCALITY_CENTER_KM * _KM_IN_DEGREES)
 
-        if _within_israel_bounds(geodata) and geodata_distance_from_center < 10 * _KM_IN_DEGREES:
+        if is_valid:
             return pd.Series({'lat': geodata.latitude, 'lng': geodata.longitude})
+
     return pd.Series({'lat': None, 'lng': None})
 
 
@@ -168,8 +176,23 @@ def _enrich_per_locality(locality_name, ldf, fetcher):
     r = _enrich_locality_strategy(locality_name, fetcher)
     locality_center = shapely.geometry.Point(r.longitude, r.latitude)
 
+    # See if we can find a ISR_ADM2 polygon for this locality.
+    isr_adm2 = data_utils.read_gis_file(data.GisFile.ISR_ADM2, proj=data.PROJ_LNGLAT)  # memoized.
+    matched_polygons = isr_adm2[isr_adm2.contains(locality_center)]
+    if matched_polygons.empty:
+        locality_polygon = None
+    elif len(matched_polygons) > 1:
+        logging.warning(
+            f'Found {len(matched_polygons)} polygons in ISR_ADM2 that match locality '
+            f'"{locality_name}" ({locality_center}). Not using locality polygon.')
+        locality_polygon = None
+    else:
+        locality_polygon = matched_polygons.iloc[0].geometry  # Single row.
+
     res = ldf.apply(ft.partial(_enrich_addresses_strategy,
-                               locality_center=locality_center, fetcher=fetcher))
+                               locality_center=locality_center,
+                               locality_polygon=locality_polygon,
+                               fetcher=fetcher))
     return res
 
 
