@@ -16,8 +16,8 @@ from absl import logging
 import pandas as pd
 import tabulate
 
+from il_elections.data import data
 from il_elections.pipelines.preprocessing import preprocessing
-from il_elections.utils import data_utils
 
 
 _DEFAULT_OUTPUT_FOLDER = 'outputs/preprocessing'
@@ -35,7 +35,7 @@ _FLAG_SINGLE_CAMPAIGN = flags.DEFINE_string(
     'single_campaign', None, 'Only run this campaign from the config (None runs all)')
 
 
-def _print_campaign_data_analysis(campaign_metadata: data_utils.CampaignMetadata,
+def _print_campaign_data_analysis(campaign_metadata: data.CampaignMetadata,
                                  campaign_data_analysis: preprocessing.CampaignDataAnalysis):
     logging_parts = [
         f'''

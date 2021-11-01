@@ -1,8 +1,12 @@
 """Various data classes and utilities."""
 import abc
 import dataclasses
+import datetime
+import enum
+import pathlib
 from typing import Mapping, Union, Any
 
+import geopandas as gpd
 import pandas as pd
 
 
@@ -72,3 +76,30 @@ class BallotsVotes(TypeAwareDataFrame):
         # Set index to locality_id+ballot_id
         self.df.set_index(self.df['locality_id'] + '-' + self.df['ballot_id'],
                           inplace=True)
+
+
+PROJ_UTM = 'EPSG:32636'  # UTM zone 36 (matches Israel)
+PROJ_LNGLAT = 'EPSG:4326'
+
+
+@dataclasses.dataclass(frozen=True)
+class CampaignMetadata:
+    name: str
+    date: datetime.date
+
+
+@dataclasses.dataclass
+class PreprocessedCampaignData:
+    raw_votes: gpd.GeoDataFrame
+    per_location: gpd.GeoDataFrame
+    metadata: CampaignMetadata
+
+
+class GisFile(enum.Enum):
+    """Contains known GIS files locations."""
+    ISR_ADM0 = pathlib.Path('data/gis/boundaries/geoBoundaries-ISR-ADM0-all.zip')
+    ISR_ADM1 = pathlib.Path('data/gis/boundaries/geoBoundaries-ISR-ADM1-all.zip')
+    ISR_ADM2 = pathlib.Path('data/gis/boundaries/geoBoundaries-ISR-ADM2-all.zip')
+    PSE_ADM0 = pathlib.Path('data/gis/boundaries/geoBoundaries-PSE-ADM0-all.zip')
+    PSE_ADM1 = pathlib.Path('data/gis/boundaries/geoBoundaries-PSE-ADM1-all.zip')
+    ISR_WATERBODIES = pathlib.Path('data/gis/boundaries/Israel_water_bodies.kml')

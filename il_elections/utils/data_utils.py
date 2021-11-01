@@ -1,10 +1,9 @@
 """Utilities to ease working with the ballots geo data."""
-import dataclasses
-import datetime
+import functools as ft
 import itertools as it
 import pathlib
 import re
-from typing import Iterator, Sequence, Mapping, Optional, Union
+from typing import Iterator, Sequence, Mapping, Optional
 import yaml
 
 import geopandas as gpd
@@ -12,20 +11,20 @@ import numpy as np
 import pandas as pd
 import shapely.geometry
 
-from il_elections.utils import plot_utils
+from il_elections.data import data
 
 
-@dataclasses.dataclass(frozen=True)
-class CampaignMetadata:
-    name: str
-    date: datetime.date
+@ft.lru_cache(maxsize=None)
+def _read_file(file_path: pathlib.Path):
+    return gpd.read_file(file_path)
 
-
-@dataclasses.dataclass
-class PreprocessedCampaignData:
-    raw_votes: gpd.GeoDataFrame
-    per_location: gpd.GeoDataFrame
-    metadata: CampaignMetadata
+def read_gis_file(gis_file: data.GisFile, proj: str = data.PROJ_UTM) -> gpd.GeoDataFrame:
+    """Reads a GIS file."""
+    gdf = _read_file(gis_file.value)
+    gdf = gdf.to_crs(proj)
+    if 'shapeName' in gdf.columns:
+        gdf = gdf.set_index('shapeName')
+    return gdf
 
 
 def clean_hebrew_address(address_string: Optional[str]):
@@ -71,31 +70,27 @@ def _generate_covering_polygons_grid_cells_by_grid_length(
 
 def _generate_grid(bounded_polygon: shapely.geometry.Polygon,
                    grid_polygons: Sequence[shapely.geometry.Polygon],
-                   crs=plot_utils.PROJ_UTM) -> gpd.GeoSeries:
+                   crs=data.PROJ_UTM) -> gpd.GeoSeries:
     grid = gpd.GeoSeries(grid_polygons, crs=crs)
     grid = grid[grid.intersects(bounded_polygon)]
     return grid
 
 
 def generate_grid_by_size(
-    bounded_polygon: Union[shapely.geometry.Polygon, plot_utils.Maps],
+    bounded_polygon: shapely.geometry.Polygon,
     grid_size: int,
-    crs: str = plot_utils.PROJ_UTM):
+    crs: str = data.PROJ_UTM):
     """Generates a grid that covers the polygon with (size x size) cells."""
-    if isinstance(bounded_polygon, plot_utils.Maps):
-        bounded_polygon = bounded_polygon.value
     grid_polygons = list(_generate_covering_polygons_grid_cells_by_grid_size(
         bounded_polygon, grid_size))
     return _generate_grid(bounded_polygon, grid_polygons, crs)
 
 
 def generate_grid_by_length(
-    bounded_polygon: Union[shapely.geometry.Polygon, plot_utils.Maps],
+    bounded_polygon: shapely.geometry.Polygon,
     grid_length: float,
-    crs: str = plot_utils.PROJ_UTM):
+    crs: str = data.PROJ_UTM):
     """Generates a grid that covers the polygon where every cell is at size (length x length)."""
-    if isinstance(bounded_polygon, plot_utils.Maps):
-        bounded_polygon = bounded_polygon.value
     grid_polygons = list(_generate_covering_polygons_grid_cells_by_grid_length(
         bounded_polygon, grid_length))
     return _generate_grid(bounded_polygon, grid_polygons, crs)
@@ -130,24 +125,24 @@ def aggregate_parties_votes(parties_votes: Sequence[VotingCounts]) -> VotingCoun
 
 
 def load_preprocessed_campaign_data(
-    data_folder: pathlib.Path, campaign_name: str) -> PreprocessedCampaignData:
+    data_folder: pathlib.Path, campaign_name: str) -> data.PreprocessedCampaignData:
     """Loading preprocessed data. Converting and aggregating based on the geo-data."""
     data_path = data_folder / f'{campaign_name}.data'
     metadata_path = data_folder / f'{campaign_name}.metadata'
 
     with open(metadata_path, 'rt', encoding='utf8') as f:
-        metadata = CampaignMetadata(**yaml.safe_load(f))
-    data = pd.read_parquet(data_path)
+        metadata = data.CampaignMetadata(**yaml.safe_load(f))
+    df = pd.read_parquet(data_path)
     # Dropping ballots without geo (should be only "external votes").
-    data = data.dropna(subset=['lat', 'lng'])
+    df = df.dropna(subset=['lat', 'lng'])
 
     raw_votes_gdf = gpd.GeoDataFrame(
-        data,
-        geometry=gpd.points_from_xy(data['lng'], data['lat']),
-        crs=plot_utils.PROJ_LNGLAT).to_crs(plot_utils.PROJ_UTM)
+        df,
+        geometry=gpd.points_from_xy(df['lng'], df['lat']),
+        crs=data.PROJ_LNGLAT).to_crs(data.PROJ_UTM)
 
     _nanunique = lambda x: list(np.unique(x.dropna()))
-    per_location_df = data.assign(num_ballots=1).groupby(['lng', 'lat']).agg({
+    per_location_df = df.assign(num_ballots=1).groupby(['lng', 'lat']).agg({
         'num_ballots': np.sum,
         'ballot_id': _nanunique,
         'locality_id': 'first',
@@ -163,9 +158,9 @@ def load_preprocessed_campaign_data(
     per_location_gdf = gpd.GeoDataFrame(
         per_location_df,
         geometry=gpd.points_from_xy(per_location_df['lng'], per_location_df['lat']),
-        crs=plot_utils.PROJ_LNGLAT).to_crs(plot_utils.PROJ_UTM)
+        crs=data.PROJ_LNGLAT).to_crs(data.PROJ_UTM)
 
-    return PreprocessedCampaignData(
+    return data.PreprocessedCampaignData(
         raw_votes=raw_votes_gdf, per_location=per_location_gdf, metadata=metadata)
 
 

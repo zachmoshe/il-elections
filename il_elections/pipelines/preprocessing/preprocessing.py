@@ -34,7 +34,7 @@ class CampaignDataLocation:
 @dataclasses.dataclass(frozen=True)
 class CampaignConfig:
     """Holds all the relevant config needed to process a single campaign."""
-    metadata: data_utils.CampaignMetadata
+    metadata: data.CampaignMetadata
     data: CampaignDataLocation
 
 
@@ -56,7 +56,7 @@ class PreprocessingConfig:
         for obj in obj['preprocessing_config']['campaigns']:
             campaign_configs.append(
                 CampaignConfig(
-                    metadata=data_utils.CampaignMetadata(
+                    metadata=data.CampaignMetadata(
                         name=obj['campaign_name'],
                         date=obj['campaign_date'],
                     ),
@@ -203,7 +203,7 @@ def _get_ballot_index(ballots_dataframe, drop_subballot=False):
 
 
 def preprocess(config: PreprocessingConfig
-               ) -> Iterator[Tuple[data_utils.CampaignMetadata, pd.DataFrame]]:
+               ) -> Iterator[Tuple[data.CampaignMetadata, pd.DataFrame]]:
     """Runs a preprocessing pipeline for a given config (multiple campaigns).
     Yields tuples of (campaign_metadata, dataframe) for every campaign.
     """
