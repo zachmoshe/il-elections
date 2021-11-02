@@ -7,6 +7,7 @@ from typing import Iterator, Sequence, Mapping, Optional
 import yaml
 
 import geopandas as gpd
+import geovoronoi
 import numpy as np
 import pandas as pd
 import shapely.geometry
@@ -188,7 +189,18 @@ def norm_parties_votes_to_pct(votes: VotingCounts) -> Mapping[str, float]:
     normed_votes = {k: (v / total_votes if total_votes else 0.) for k, v in votes.items()}
     return normed_votes
 
+
 def project(parties_data: Mapping[str, float], weights: Mapping[str, float]) -> float:
     """Projects votes counts by a linear set of weights."""
     projected = sum(parties_data[k] * weights.get(k, 0.) for k in parties_data.keys())
     return projected
+
+
+def get_voronoi_polygons(per_location_data):
+    """Returns the Voronoi polygons for a given set of points."""
+    points = per_location_data.geometry
+    # voronoi_regions_from_coords() returns only 2 values in our case.
+    region_polys, _ = geovoronoi.voronoi_regions_from_coords(  # pylint: disable=unbalanced-tuple-unpacking
+        points, load_israel_polygon())
+    region_polys = gpd.GeoSeries(region_polys, crs=points.crs)
+    return region_polys

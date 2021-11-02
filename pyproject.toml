@@ -23,6 +23,7 @@ branca = "^0.4.2"
 folium = "^0.12.1"
 pygeos = "^0.10.2"
 Jinja2 = "^3.0.2"
+geovoronoi = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.5.7"
