@@ -156,15 +156,17 @@ def create_ballots_feature_group(
     return grp
 
 
-def folium_style(color_column=None, colormap=branca.colormap.linear.Reds_09, **style_kwargs):
-  def _func(feature):
-    args = {}
-    if color_column is not None:
-      value = feature['properties'][color_column]
-      color = colormap(value)
-      args['fillColor'] = color
-      args['color']= color
-    args.update(style_kwargs)
-    return args
-  return _func
-
+def folium_style(color_column=None, colormap=branca.colormap.linear.Reds_09, **style_kwargs):  # pylint: disable=no-member
+    """Returns a Folium style function.
+    Can read the color from a property of the feature and set other static values.
+    """
+    def _func(feature):
+        args = {}
+        if color_column is not None:
+            value = feature['properties'][color_column]
+            color = colormap(value)
+            args['fillColor'] = color
+            args['color'] = color
+        args.update(style_kwargs)
+        return args
+    return _func
