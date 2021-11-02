@@ -154,3 +154,17 @@ def create_ballots_feature_group(
                           color=circle_color,
                           popup=popup))
     return grp
+
+
+def folium_style(color_column=None, colormap=branca.colormap.linear.Reds_09, **style_kwargs):
+  def _func(feature):
+    args = {}
+    if color_column is not None:
+      value = feature['properties'][color_column]
+      color = colormap(value)
+      args['fillColor'] = color
+      args['color']= color
+    args.update(style_kwargs)
+    return args
+  return _func
+
