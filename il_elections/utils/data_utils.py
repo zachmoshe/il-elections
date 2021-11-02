@@ -27,6 +27,24 @@ def read_gis_file(gis_file: data.GisFile, proj: str = data.PROJ_UTM) -> gpd.GeoD
     return gdf
 
 
+@ft.lru_cache()
+def load_israel_polygon():
+    """Returns a Shapely polygon (UTM) for the state of Israel (including the west bank)."""
+    # Take all Israel and the West Bank only from PSE.
+    israel = pd.concat([
+        read_gis_file(data.GisFile.ISR_ADM1),
+        read_gis_file(data.GisFile.PSE_ADM1),
+    ]).query('shapeGroup=="ISR" or shapeISO=="PS-WBK"').unary_union
+
+    all_water_bodies_polygon = (
+        read_gis_file(data.GisFile.ISR_WATERBODIES).unary_union)
+
+    # Eliminate all tiny holes due to imperfect alignment between ISR and PSE files.
+    israel = shapely.geometry.Polygon(israel.exterior)
+    israel -= all_water_bodies_polygon
+    return israel
+
+
 def clean_hebrew_address(address_string: Optional[str]):
     if pd.isna(address_string):
         return ''

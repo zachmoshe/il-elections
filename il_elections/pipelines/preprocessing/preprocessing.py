@@ -120,7 +120,9 @@ def _normalize_optional_addresses(
 
 def _within_israel_bounds(geodata: geodata_fetcher.GeoDataResults):
     """Checks if lng/lat boundaries are within Israel (approx.)"""
-    return (34. < geodata.longitude < 36.) and (29. < geodata.latitude < 34.)  # pylint: disable=chained-comparison
+    point = shapely.geometry.Point(geodata.longitude, geodata.latitude)
+    return point.within(data_utils.load_israel_polygon())
+
 
 
 _NON_GEOGRAPHICAL_LOCALITY_IDS = set([

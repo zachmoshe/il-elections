@@ -28,23 +28,6 @@ lnglat_to_utm = pyproj.Transformer.from_proj(
     pyproj.Proj(data.PROJ_LNGLAT), pyproj.Proj(data.PROJ_UTM), always_xy=True)
 
 
-def load_israel_polygon():
-    """Returns a Shapely polygon (UTM) for the state of Israel (including the west bank)."""
-    # Take all Israel and the West Bank only from PSE.
-    israel = pd.concat([
-        data_utils.read_gis_file(data.GisFile.ISR_ADM1),
-        data_utils.read_gis_file(data.GisFile.PSE_ADM1),
-    ]).query('shapeGroup=="ISR" or shapeISO=="PS-WBK"').unary_union
-
-    all_water_bodies_polygon = (
-        data_utils.read_gis_file(data.GisFile.ISR_WATERBODIES).unary_union)
-
-    # Eliminate all tiny holes due to imperfect alignment between ISR and PSE files.
-    israel = shapely.geometry.Polygon(israel.exterior)
-    israel -= all_water_bodies_polygon
-    return israel
-
-
 _ISR_ADM1 = data_utils.read_gis_file(data.GisFile.ISR_ADM1)
 
 
@@ -60,7 +43,7 @@ def generate_rectangle(min_x, min_y, max_x, max_y):
 class Maps(enum.Enum):
     """Holds known maps configuration for easier reference."""
     # Areas
-    ISRAEL = load_israel_polygon()
+    ISRAEL = data_utils.load_israel_polygon()
     NORTH = _ISR_ADM1.loc['North District'].geometry
     CENTER = _ISR_ADM1.loc[['Tel Aviv District', 'Center District']].dissolve().iloc[0].geometry
     SOUTH = _ISR_ADM1.loc['South District'].geometry
