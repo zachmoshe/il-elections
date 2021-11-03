@@ -8,6 +8,16 @@ from typing import Mapping, Union, Any
 
 import geopandas as gpd
 import pandas as pd
+import pyproj
+
+
+PROJ_UTM = 'EPSG:32636'  # UTM zone 36 (matches Israel)
+PROJ_LNGLAT = 'EPSG:4326'
+
+utm_to_lnglat = pyproj.Transformer.from_proj(
+    pyproj.Proj(PROJ_UTM), pyproj.Proj(PROJ_LNGLAT), always_xy=True)
+lnglat_to_utm = pyproj.Transformer.from_proj(
+    pyproj.Proj(PROJ_LNGLAT), pyproj.Proj(PROJ_UTM), always_xy=True)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -76,10 +86,6 @@ class BallotsVotes(TypeAwareDataFrame):
         # Set index to locality_id+ballot_id
         self.df.set_index(self.df['locality_id'] + '-' + self.df['ballot_id'],
                           inplace=True)
-
-
-PROJ_UTM = 'EPSG:32636'  # UTM zone 36 (matches Israel)
-PROJ_LNGLAT = 'EPSG:4326'
 
 
 @dataclasses.dataclass(frozen=True)

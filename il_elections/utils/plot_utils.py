@@ -10,18 +10,11 @@ import importlib_resources
 import jinja2
 import numpy as np
 import pandas as pd
-import pyproj
 import shapely
 
 from il_elections.data import data
 import il_elections.utils  # For importlib_resources at JINJA_ENV assignment.
 from il_elections.utils import data_utils
-
-
-utm_to_lnglat = pyproj.Transformer.from_proj(
-    pyproj.Proj(data.PROJ_UTM), pyproj.Proj(data.PROJ_LNGLAT), always_xy=True)
-lnglat_to_utm = pyproj.Transformer.from_proj(
-    pyproj.Proj(data.PROJ_LNGLAT), pyproj.Proj(data.PROJ_UTM), always_xy=True)
 
 
 _ISR_ADM1 = data_utils.read_gis_file(data.GisFile.ISR_ADM1)
@@ -64,7 +57,7 @@ def ilmap(map_def: Maps, width='100%', height=400):  # pylint: disable=redefined
     fig = branca.element.Figure(width=width, height=height)
     m = folium.Map(tiles='OpenStreetMap')
 
-    lnglat_polygon = shapely.ops.transform(utm_to_lnglat.transform, map_def.value)
+    lnglat_polygon = shapely.ops.transform(data.utm_to_lnglat.transform, map_def.value)
     minx, miny, maxx, maxy = lnglat_polygon.bounds
     # fit_bounds() requires (lat, lng) of southwest, northeast.
     m.fit_bounds(((miny, minx), (maxy, maxx)))
