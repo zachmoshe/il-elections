@@ -48,7 +48,7 @@ Total Num Voted: {campaign_data_analysis.num_voted} ({campaign_data_analysis.vot
         tabulate.tabulate(
             (pd.Series(campaign_data_analysis.parties_votes, name='count')
              .sort_values(ascending=False).iloc[:5].to_frame()),
-            tablefmt='grid', floatfmt='f'),
+            tablefmt='grid', floatfmt='.0f'),
         'Missing GeoLocations:',
         tabulate.tabulate(
             campaign_data_analysis.missing_geo_location.to_frame(),
