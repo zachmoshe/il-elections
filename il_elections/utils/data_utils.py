@@ -15,6 +15,10 @@ import shapely.geometry
 from il_elections.data import data
 
 
+# Required in order to allow geopandas to load KML files (no need to install a new driver)
+gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
+
+
 @ft.lru_cache(maxsize=None)
 def _read_file(file_path: pathlib.Path):
     return gpd.read_file(file_path)

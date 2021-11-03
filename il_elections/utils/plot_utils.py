@@ -18,10 +18,6 @@ import il_elections.utils  # For importlib_resources at JINJA_ENV assignment.
 from il_elections.utils import data_utils
 
 
-# Required in order to allow geopandas to load KML files (no need to install a new driver)
-gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
-
-
 utm_to_lnglat = pyproj.Transformer.from_proj(
     pyproj.Proj(data.PROJ_UTM), pyproj.Proj(data.PROJ_LNGLAT), always_xy=True)
 lnglat_to_utm = pyproj.Transformer.from_proj(
