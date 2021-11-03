@@ -116,40 +116,6 @@ Although called PDFParser, this parser will actually parse an XLSX format genera
 
         return data.BallotsMetadata(df=dataframe.astype('string'))
 
-_HEBREW_TO_ENGLISH_TRASCRIBE = {
-     'א': 'a',
-     'ב': 'b',
-     'ג': 'g',
-     'ד': 'd',
-     'ה': 'h',
-     'ו': 'v',
-     'ז': 'z',
-     'ח': 'H',
-     'ט': 't',
-     'י': 'i',
-     'כ': 'k',
-     'ך': 'k.',
-     'ל': 'l',
-     'מ': 'm',
-     'ם': 'm.',
-     'נ': 'n',
-     'ן': 'n.',
-     'ס': 's',
-     'ע': 'A',
-     'פ': 'p',
-     'ף': 'p.',
-     'צ': 'Z',
-     'ץ': 'Z.',
-     'ק': 'K',
-     'ר': 'r',
-     'ש': 'S',
-     'ת': 'T',
-}
-assert len(_HEBREW_TO_ENGLISH_TRASCRIBE.values()) == len(_HEBREW_TO_ENGLISH_TRASCRIBE),\
-    'heb->eng transcribe must be value-unique.'
-
-def _heb_to_eng(text):
-    return ''.join(_HEBREW_TO_ENGLISH_TRASCRIBE[c] for c in text)
 
 class BallotsVotesFileParser:
     """Parses ballots votes from Excel/CSV formats."""
@@ -200,7 +166,7 @@ class BallotsVotesFileParser:
                            - set(self._IGNORED_COLUMNS))
         parties_votes = (
             orig_dataframe.loc[:, parties_columns]
-            .rename(_heb_to_eng, axis='columns')
+            .rename(data.heb_to_eng, axis='columns')
             .apply(dict, axis='columns'))
         dataframe[self._PARTIES_VOTES_COLUMN_NAME] = parties_votes
 
