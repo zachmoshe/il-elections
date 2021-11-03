@@ -51,6 +51,19 @@ Also, since parties change from one campaign to another, the voting data is stor
 
 The pipeline also stores a `metadata` file for every campaign which is a YAML file with a few fields.
 
+### Parties names transcription
+
+Hebrew party names are transcribed into english letters with the following conversion table:
+
+| | | | | | |
+|-------|-------|--------|-------|--------|--------|
+| א = a | ב = b | ג = g  | ד = d | ה = h  | ו = v  |
+| ז = z | ח = H | ט = t  | י = i | כ = k  | ך = k. |
+| ל = l | מ = m | ם = m. | נ = n | ן = n. | ס = s  |
+| ע = A | פ = p | ף = p. | צ = Z | ץ = Z. | ק = K  |
+| ר = r | ש = S | ת = T  |       |        |        |
+
+
 ### Processed files examples
 
 #### outputs/preprocessing/knesset-*.data
