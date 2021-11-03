@@ -21,11 +21,6 @@ class BallotsVotesParser(Protocol):
 
 class BallotsMetadataExcelParser:
     """Parses ballots metadata from an Excel file format."""
-    _BALLOT_ID_COLUMN = 'סמל קלפי'
-    _LOCALITY_ID_COLUMN = 'סמל ישוב בחירות'
-    _LOCALITY_NAME_COLUMN = 'שם ישוב בחירות'
-    _LOCATION_NAME_COLUMN = 'מקום קלפי'
-    _ADDRESS_COLUMN = 'כתובת קלפי'
     _COLUMNS_MAPPING = {
         'סמל קלפי': 'ballot_id',
         'סמל ישוב בחירות': 'locality_id',
@@ -39,9 +34,7 @@ class BallotsMetadataExcelParser:
         # Pandas handles both file object and paths.
         dataframe = pd.read_excel(path)
 
-        if any(col not in dataframe.columns for col in
-               (self._BALLOT_ID_COLUMN, self._LOCALITY_ID_COLUMN, self._LOCALITY_NAME_COLUMN,
-               self._LOCATION_NAME_COLUMN, self._ADDRESS_COLUMN)):
+        if set(self._COLUMNS_MAPPING.keys()) - set(dataframe.columns):
             raise ValueError('Could not find all required columns in the given Excel file.')
 
         dataframe = (
