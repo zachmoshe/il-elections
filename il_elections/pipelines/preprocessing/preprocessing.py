@@ -9,7 +9,7 @@ from typing import Iterator, TypeVar, Sequence, Tuple, Mapping
 from absl import logging
 import numpy as np
 import pandas as pd
-import shapely.geometry
+import shapely
 import yaml
 
 
@@ -118,11 +118,17 @@ def _normalize_optional_addresses(
     ]
 
 
+@ft.lru_cache(maxsize=1)
+def _load_israel_polygon_lnglat():
+    israel = data_utils.load_israel_polygon()
+    israel = shapely.ops.transform(data.utm_to_lnglat.transform, israel)
+    return israel
+
+
 def _within_israel_bounds(geodata: geodata_fetcher.GeoDataResults):
     """Checks if lng/lat boundaries are within Israel (approx.)"""
     point = shapely.geometry.Point(geodata.longitude, geodata.latitude)
-    return point.within(data_utils.load_israel_polygon())
-
+    return point.within(_load_israel_polygon_lnglat())
 
 
 _NON_GEOGRAPHICAL_LOCALITY_IDS = set([
