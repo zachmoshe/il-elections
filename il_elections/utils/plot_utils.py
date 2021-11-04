@@ -91,8 +91,9 @@ def generate_tooltip_html_for_per_location_row(  # pylint: disable=too-many-loca
 
         limit_idx = min(
             limit_num_parties or len(sorted_normed_votes),
-            np.where(np.cumsum([x[1] for x in sorted_normed_votes]) > top_pct_coverage)[
-                0][0] + 1 if top_pct_coverage else len(sorted_normed_votes),
+            np.where(np.cumsum([x[1] for x in sorted_normed_votes]) >=
+                     top_pct_coverage - 1e-6)[0][0] + 1  # minus eps to avoid precision problems.
+            if top_pct_coverage else len(sorted_normed_votes),
         )
         sorted_normed_votes = sorted_normed_votes[:limit_idx]
         parties_data_to_display = [(k, per_location_row['parties_votes'][k], v)
