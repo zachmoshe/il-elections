@@ -1,6 +1,6 @@
 # Parsing raw files
 
-Raw data files come in various formats and encodings and require some careful handling (e.g. columns renaming, strings cleaning, etc...). The `il_elections.data.parsers` module contains implementations for all the parsers we currently need (up to the 24th Knesset elections).
+Raw data files come in various formats and encodings and require some careful handling (e.g. columns renaming, strings cleaning, etc...). The `il_elections.data.parsers` module contains implementations for all the parsers we currently need.
 
 All parsers return data as a `pd.DataFrame` with a defined set of columns ([il_elections.data.data.BallotsMetadata](/il_elections/data/data.py) or [il_elections.data.data.BallotsVotes](/il_elections/data/data.py)).
 

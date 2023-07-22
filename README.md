@@ -24,9 +24,14 @@ The main project runs with [`Python 3.9.7`](.python-version). Notice that the ex
 
 ### Raw input data
 
-#### Elections Comittee
+#### Elections Committee
 
 Raw input files contain two files. These come in various formats but serve (basically) the same purpose. One is a file with a table of rows per ballots and columns that contain some aggregated data about that ballot (number of voters, how many actually voted?, how many were disqualified?, etc...) and a column per party with the raw count. The other file is a metadata file on the ballots, and contains the locality name (which could be a city or a small village), the location name (e.g. "XYZ school", or "XYZ mall") and the ballot's address (which is some times useless, like in cases of a very small village with basically no street names).
+
+Files from the election committee can be found in the following official pages (links are for the 25th knesset campaign):
+  * Ballots votes: https://votes25.bechirot.gov.il/
+  * Ballots metadata: https://www.gov.il/he/Departments/Guides/knesset25-elections-info?chapterIndex=2 (look for "Tofes B")
+
 
 #### GIS files
 

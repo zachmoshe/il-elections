@@ -21,5 +21,6 @@
 
 - Install requirements:
   ```
+  brew install geos
   poetry install
   ```
