@@ -165,7 +165,7 @@ class BallotsVotesFileParser:
         parties_columns = (set(orig_dataframe.columns) - set(columns_mapping.keys())
                            - set(self._IGNORED_COLUMNS))
         parties_votes = (
-            orig_dataframe.loc[:, parties_columns]
+            orig_dataframe.loc[:, list(parties_columns)]
             .rename(data.heb_to_eng, axis='columns')
             .apply(dict, axis='columns'))
         dataframe[self._PARTIES_VOTES_COLUMN_NAME] = parties_votes

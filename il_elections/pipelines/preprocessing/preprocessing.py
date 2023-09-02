@@ -10,6 +10,7 @@ from absl import logging
 import numpy as np
 import pandas as pd
 import shapely
+import tqdm
 import yaml
 
 
@@ -176,7 +177,7 @@ def _enrich_locality_strategy(locality_name, fetcher):
         r = fetcher.fetch_geocode_data(add)
         if r is not None and _within_israel_bounds(r):
             return r
-    raise ValueError(f'could\'t find locality geocoding for "{locality_name}"')
+    raise ValueError(f'could\'t find locality geocoding for "{locality_name}".\nConsider adding to `il_elections/data/known_addresses_geolocations.csv` in case you can geolocate manually.')
 
 
 def _enrich_per_locality(locality_name, ldf, fetcher):
@@ -220,9 +221,9 @@ def enrich_metadata_with_geolocation(metadata_df: pd.DataFrame) -> pd.DataFrame:
     with futures.ThreadPoolExecutor() as exc:
         all_enriched = exc.map(
             lambda x: _enrich_per_locality(*x, fetcher=fetcher),
-            list(grouped))
+            grouped)
 
-    enriched = pd.concat(list(all_enriched))
+    enriched = pd.concat(list(tqdm.tqdm(all_enriched)))
     return metadata_df.join(enriched)
 
 
@@ -260,7 +261,7 @@ def preprocess(config: PreprocessingConfig
             votes_df[votes_df.locality_id.isin(missing_locality_ids)]
             .groupby('locality_id').agg(min)['locality_name'].to_frame()  # All are the same.
             .assign(ballot_id='0.0').reset_index())  # Adding a fake ballot_id.
-        metadata_df = metadata_df.append(missing_localities)
+        metadata_df = pd.concat((metadata_df, missing_localities))
         metadata_df = enrich_metadata_with_geolocation(metadata_df)
 
         votes_df.set_index(_get_ballot_index(votes_df, drop_subballot=False), inplace=True)

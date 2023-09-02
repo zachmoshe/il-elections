@@ -13,11 +13,14 @@ import yaml
 from absl import app
 from absl import flags
 from absl import logging
+import dotenv
 import pandas as pd
 import tabulate
 
 from il_elections.data import data
 from il_elections.pipelines.preprocessing import preprocessing
+
+dotenv.load_dotenv()
 
 
 _DEFAULT_OUTPUT_FOLDER = 'outputs/preprocessing'
@@ -61,13 +64,6 @@ Total Num Voted: {campaign_data_analysis.num_voted} ({campaign_data_analysis.vot
 
 def main(_):
     output_path = pathlib.Path(_FLAG_OUTPUT_FODLER.value)
-    if output_path.exists():
-        if _FLAG_OVERRIDE.value:
-            shutil.rmtree(output_path)
-        else:
-            logging.error('Output folder already exists. '
-                          'Override flag is set to false. Can\'t continue')
-            sys.exit(1)
     output_path.mkdir(parents=True, exist_ok=True)
 
     config = preprocessing.PreprocessingConfig.from_yaml(
@@ -86,19 +82,29 @@ def main(_):
 
     for campaign_metadata, campaign_df in preprocessed_data_iter:
         logging.info(f'Got data for campaign "{campaign_metadata.name}". Storing to output folder.')
-        metadata_filename = campaign_metadata.name + '.metadata'
-        data_filename = campaign_metadata.name + '.data'
+        metadata_path = output_path / (campaign_metadata.name + '.metadata')
+        data_path = output_path / (campaign_metadata.name + '.data')
+
+        if data_path.exists() or metadata_path.exists():
+            if _FLAG_OVERRIDE.value:
+                logging.info(f"Files for {campaign_metadata.name} exist. Overriding...")
+                data_path.unlink()
+                metadata_path.unlink()
+            else:
+                continue
 
         # Dump metadata
-        with open(output_path / metadata_filename, 'wt', encoding='utf8') as f:
+        with open(metadata_path, 'wt', encoding='utf8') as f:
             yaml.dump(dataclasses.asdict(campaign_metadata), f, encoding='utf8')
         # Dump dataframe
-        campaign_df.to_parquet(output_path / data_filename)
+        campaign_df.to_parquet(data_path)
 
         # Analyze campaign data and print report
         campaign_data_analysis = preprocessing.analyze_campaign_data(campaign_df)
         _print_campaign_data_analysis(campaign_metadata, campaign_data_analysis)
 
+def cli():
+    app.run(main)
 
 if __name__ == '__main__':
-    app.run(main)
+    print("Should run with `poetry run ...`")

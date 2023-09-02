@@ -6,6 +6,7 @@
 
 #brew update
 #brew install tcl-tk zlib readline xz bzip2
+brew install openblas
 
 python_version_path=$(dirname $BASH_SOURCE)/..
 python_version=$(cat $python_version_path/.python-version)

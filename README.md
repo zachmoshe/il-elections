@@ -5,7 +5,7 @@ This project's goal is to collect and analyze data from Israel's latest election
 Data was obtained from the [Israeli Central Elections Committee](https://www.bechirot.gov.il/) for every campaign I could find data files for. Required data files contain the exported data for the vote counts in each ballot, and a metadata file with the ballots' addresses. Both are required for the analysis and come in different formats and encodings. The preprocessing pipeline deals with the
 different formats, enriches the data to add the geo-location and generates the final data files.
 
-Data is currently processed for the campaigns to the 18th-24th Knessets (roughly 2009-2021).
+Data is currently processed for campaigns of the 18th-25th Knessets (roughly 2009-2022).
 
 ## Project structure and general information
 
@@ -17,7 +17,7 @@ Data is currently processed for the campaigns to the 18th-24th Knessets (roughly
 
 ### Python versions notice
 
-The main project runs with [`Python 3.9.7`](.python-version). Notice that the external Colab currently uses `Python 3.7` so while reading the output files as dataframes works, importing some code from the project iteself might not work properly. If you require deeper usage of the code and utilities, it's advised to use Colab in a locally-hosted mode, or use Jupyter notebook locally with the same venv.
+The main project runs with [`Python 3.9`](.python-version). Notice that the external Colab currently uses `Python 3.7` so while reading the output files as dataframes works, importing some code from the project iteself might not work properly. If you require deeper usage of the code and utilities, it's advised to use Colab in a locally-hosted mode, or use Jupyter notebook locally with the same venv.
 
 
 ## Data Spec

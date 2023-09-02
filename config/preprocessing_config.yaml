@@ -1,5 +1,15 @@
 preprocessing_config:
   campaigns:
+    - campaign_name: knesset-25
+      campaign_date: !!timestamp 2022-11-01
+      data:
+        ballots_votes:
+          filename: data/elections/knesset-25/expb.csv
+          format: csv-utf8
+        ballots_metadata:
+          filename: data/elections/knesset-25/kalpiplaces_kalpieslist_27-10.xlsx
+          format: excel
+
     - campaign_name: knesset-24
       campaign_date: !!timestamp 2021-03-23
       data:
