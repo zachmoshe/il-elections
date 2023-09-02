@@ -16,7 +16,8 @@ from il_elections.data import data
 
 
 # Required in order to allow geopandas to load KML files (no need to install a new driver)
-gpd.io.file.fiona.drvsupport.supported_drivers['KML'] = 'rw'
+from fiona.drvsupport import supported_drivers
+supported_drivers['KML'] = 'rw'
 
 
 @ft.lru_cache(maxsize=None)
