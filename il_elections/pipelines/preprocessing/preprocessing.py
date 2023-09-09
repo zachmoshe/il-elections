@@ -4,7 +4,7 @@ import dataclasses
 import functools as ft
 import itertools as it
 import pathlib
-from typing import Iterator, TypeVar, Sequence, Tuple, Mapping
+from typing import Iterator, Sequence, Tuple, Mapping
 
 from absl import logging
 import numpy as np
@@ -20,10 +20,6 @@ from il_elections.data import parsers
 from il_elections.utils import data_utils
 
 
-BallotsVotesParserType = TypeVar('BallotsVotesParserType', bound=parsers.BallotsVotesParser)
-BallotsMetadataParserType = TypeVar('BallotsMetadataParserType',
-                                    bound=parsers.BallotsMetadataParser)
-
 @dataclasses.dataclass(frozen=True)
 class CampaignDataLocation:
     ballots_votes_path: pathlib.Path
@@ -35,7 +31,7 @@ class CampaignDataLocation:
 @dataclasses.dataclass(frozen=True)
 class CampaignConfig:
     """Holds all the relevant config needed to process a single campaign."""
-    metadata: data.CampaignMetadata
+    metadata: 'data.CampaignMetadata'
     data: CampaignDataLocation
 
 
@@ -177,7 +173,9 @@ def _enrich_locality_strategy(locality_name, fetcher):
         r = fetcher.fetch_geocode_data(add)
         if r is not None and _within_israel_bounds(r):
             return r
-    raise ValueError(f'could\'t find locality geocoding for "{locality_name}".\nConsider adding to `il_elections/data/known_addresses_geolocations.csv` in case you can geolocate manually.')
+    raise ValueError(
+        f'could\'t find locality geocoding for "{locality_name}".\nConsider adding to '
+        '`il_elections/data/known_addresses_geolocations.csv` in case you can geolocate manually.')
 
 
 def _enrich_per_locality(locality_name, ldf, fetcher):

@@ -6,7 +6,6 @@ which contains the dataframe with all relevent fields.
 """
 import dataclasses
 import pathlib
-import shutil
 import sys
 import yaml
 
@@ -87,7 +86,7 @@ def main(_):
 
         if data_path.exists() or metadata_path.exists():
             if _FLAG_OVERRIDE.value:
-                logging.info(f"Files for {campaign_metadata.name} exist. Overriding...")
+                logging.info(f'Files for {campaign_metadata.name} exist. Overriding...')
                 data_path.unlink()
                 metadata_path.unlink()
             else:
@@ -107,4 +106,4 @@ def cli():
     app.run(main)
 
 if __name__ == '__main__':
-    print("Should run with `poetry run ...`")
+    print('Should run with `poetry run ...`')

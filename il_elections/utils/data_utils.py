@@ -12,11 +12,10 @@ import numpy as np
 import pandas as pd
 import shapely.geometry
 
+from fiona.drvsupport import supported_drivers
 from il_elections.data import data
 
-
 # Required in order to allow geopandas to load KML files (no need to install a new driver)
-from fiona.drvsupport import supported_drivers
 supported_drivers['KML'] = 'rw'
 
 
@@ -165,7 +164,9 @@ def load_preprocessed_campaign_data(
         geometry=gpd.points_from_xy(df['lng'], df['lat']),
         crs=data.PROJ_LNGLAT).to_crs(data.PROJ_UTM)
 
-    _nanunique = lambda x: list(np.unique(x.dropna()))
+    def _nanunique(x):
+        return list(np.unique(x.dropna()))
+
     per_location_df = df.assign(num_ballots=1).groupby(['lng', 'lat']).agg({
         'num_ballots': np.sum,
         'ballot_id': _nanunique,
